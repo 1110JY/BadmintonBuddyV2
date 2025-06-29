@@ -54,7 +54,7 @@ export default function HomePage() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">Home</h1>
-        <p className="text-muted-foreground">Manage players, create sessions, and track your badminton games</p>
+        <p className="text-muted-foreground">Manage players, create sessions, and track your badminton games.</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
