@@ -49,7 +49,7 @@ export function Navigation() {
                     className={cn(
                       "flex items-center space-x-2 text-sm font-semibold transition-all duration-300 px-3 py-2 rounded-lg",
                       pathname === item.href
-                        ? "bg-gray-900 text-white"
+                        ? "bg-red-500 text-white"
                         : "text-gray-700 hover:bg-gray-100"
                     )}
                   >

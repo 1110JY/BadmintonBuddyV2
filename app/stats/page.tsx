@@ -9,7 +9,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
 import {
-  Trophy, Target, Users, Calendar, Download,
+  Trophy, Target, Users, Calendar, Download, Handshake,
 } from "lucide-react"
 
 interface Player { id: string; name: string; createdAt: string }
@@ -30,6 +30,7 @@ export default function StatsPage() {
   const [players, setPlayers] = useState<Player[]>([])
   const [sessions, setSessions] = useState<Session[]>([])
   const [playerStats, setPlayerStats] = useState<PlayerStats[]>([])
+  const [topPair, setTopPair] = useState<{ pair: [string, string]; winRate: number } | null>(null)
   const [timeFilter, setTimeFilter] = useState("all")
 
   useEffect(() => {
@@ -58,6 +59,7 @@ export default function StatsPage() {
   const calculateStats = () => {
     const filtered = getFilteredSessions()
     const stats: { [key: string]: PlayerStats } = {}
+    const pairStats: { [key: string]: { pair: [string, string]; gamesPlayed: number; gamesWon: number } } = {}
 
     players.forEach(p => {
       stats[p.id] = {
@@ -72,22 +74,27 @@ export default function StatsPage() {
       session.games.forEach(game => {
         if (!game.completed) return
         const team1Won = game.score1 > game.score2
-        game.team1.forEach(pid => {
-          sessionPlayers.add(pid)
-          if (stats[pid]) {
-            stats[pid].gamesPlayed++
-            stats[pid].totalPoints += game.score1
-            team1Won ? stats[pid].gamesWon++ : stats[pid].gamesLost++
+
+        const processTeam = (team: [string, string], won: boolean, score: number) => {
+          const pairKey = [...team].sort().join("-")
+          if (!pairStats[pairKey]) {
+            pairStats[pairKey] = { pair: [...team].sort() as [string, string], gamesPlayed: 0, gamesWon: 0 }
           }
-        })
-        game.team2.forEach(pid => {
-          sessionPlayers.add(pid)
-          if (stats[pid]) {
-            stats[pid].gamesPlayed++
-            stats[pid].totalPoints += game.score2
-            team1Won ? stats[pid].gamesLost++ : stats[pid].gamesWon++
-          }
-        })
+          pairStats[pairKey].gamesPlayed++
+          if (won) pairStats[pairKey].gamesWon++
+
+          team.forEach(pid => {
+            sessionPlayers.add(pid)
+            if (stats[pid]) {
+              stats[pid].gamesPlayed++
+              stats[pid].totalPoints += score
+              won ? stats[pid].gamesWon++ : stats[pid].gamesLost++
+            }
+          })
+        }
+
+        processTeam(game.team1, team1Won, game.score1)
+        processTeam(game.team2, !team1Won, game.score2)
       })
       sessionPlayers.forEach(pid => stats[pid] && stats[pid].sessionsPlayed++)
     })
@@ -104,6 +111,17 @@ export default function StatsPage() {
       .sort((a, b) => b.winRate - a.winRate || b.gamesPlayed - a.gamesPlayed)
 
     setPlayerStats(sorted)
+
+    let bestPair: { pair: [string, string]; winRate: number } | null = null
+    for (const entry of Object.values(pairStats)) {
+      if (entry.gamesPlayed === 0) continue
+      const winRate = (entry.gamesWon / entry.gamesPlayed) * 100
+      if (!bestPair || winRate > bestPair.winRate) {
+        bestPair = { pair: entry.pair, winRate }
+      }
+    }
+
+    setTopPair(bestPair)
   }
 
   const exportStatsToCSV = () => {
@@ -161,6 +179,13 @@ export default function StatsPage() {
           { title: "Total Sessions", icon: <Calendar className="h-4 w-4" />, value: totalSessions },
           { title: "Games Completed", icon: <Trophy className="h-4 w-4" />, value: totalGames },
           { title: "Active Players", icon: <Target className="h-4 w-4" />, value: playerStats.length },
+          {
+            title: "Top Pair",
+            icon: <Handshake className="h-4 w-4" />,
+            value: topPair
+              ? `${players.find(p => p.id === topPair.pair[0])?.name || "?"} & ${players.find(p => p.id === topPair.pair[1])?.name || "?"} (${topPair.winRate.toFixed(1)}%)`
+              : "N/A"
+          }
         ].map(({ title, icon, value }, i) => (
           <Card key={i}>
             <CardHeader className="flex justify-between items-center pb-2">
@@ -168,7 +193,7 @@ export default function StatsPage() {
               {icon}
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{value}</div>
+              <div className="text-lg font-bold">{value}</div>
             </CardContent>
           </Card>
         ))}
