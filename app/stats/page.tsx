@@ -25,12 +25,16 @@ interface PlayerStats {
   gamesLost: number; winRate: number; totalPoints: number
   averagePoints: number; sessionsPlayed: number
 }
+interface PairStats {
+  pair: [string, string]; gamesPlayed: number; gamesWon: number; totalPoints: number; averagePoints: number
+}
 
 export default function StatsPage() {
   const [players, setPlayers] = useState<Player[]>([])
   const [sessions, setSessions] = useState<Session[]>([])
   const [playerStats, setPlayerStats] = useState<PlayerStats[]>([])
   const [topPair, setTopPair] = useState<{ pair: [string, string]; winRate: number } | null>(null)
+  const [pairStatsSorted, setPairStatsSorted] = useState<PairStats[]>([])
   const [timeFilter, setTimeFilter] = useState("all")
 
   useEffect(() => {
@@ -59,7 +63,7 @@ export default function StatsPage() {
   const calculateStats = () => {
     const filtered = getFilteredSessions()
     const stats: { [key: string]: PlayerStats } = {}
-    const pairStats: { [key: string]: { pair: [string, string]; gamesPlayed: number; gamesWon: number } } = {}
+    const pairStats: { [key: string]: { pair: [string, string]; gamesPlayed: number; gamesWon: number; totalPoints: number } } = {}
 
     players.forEach(p => {
       stats[p.id] = {
@@ -78,10 +82,11 @@ export default function StatsPage() {
         const processTeam = (team: [string, string], won: boolean, score: number) => {
           const pairKey = [...team].sort().join("-")
           if (!pairStats[pairKey]) {
-            pairStats[pairKey] = { pair: [...team].sort() as [string, string], gamesPlayed: 0, gamesWon: 0 }
+            pairStats[pairKey] = { pair: [...team].sort() as [string, string], gamesPlayed: 0, gamesWon: 0, totalPoints: 0 }
           }
           pairStats[pairKey].gamesPlayed++
           if (won) pairStats[pairKey].gamesWon++
+          pairStats[pairKey].totalPoints += score
 
           team.forEach(pid => {
             sessionPlayers.add(pid)
@@ -106,15 +111,32 @@ export default function StatsPage() {
       }
     })
 
-    const sorted = Object.values(stats)
+    const sortedPlayers = Object.values(stats)
       .filter(s => s.gamesPlayed > 0)
       .sort((a, b) => b.winRate - a.winRate || b.gamesPlayed - a.gamesPlayed)
 
-    setPlayerStats(sorted)
+    setPlayerStats(sortedPlayers)
 
+    // Calculate pair rankings with average points
+    const pairs: PairStats[] = Object.values(pairStats)
+      .filter(p => p.gamesPlayed > 0)
+      .map(p => ({
+        ...p,
+        averagePoints: p.totalPoints / p.gamesPlayed,
+      }))
+      .sort((a, b) => b.winRate - a.winRate || b.gamesPlayed - a.gamesPlayed) // will fix winRate next
+
+    // Add winRate to pairs for sorting
+    pairs.forEach(p => {
+      (p as any).winRate = (p.gamesWon / p.gamesPlayed) * 100
+    })
+    pairs.sort((a, b) => (b as any).winRate - (a as any).winRate || b.gamesPlayed - a.gamesPlayed)
+
+    setPairStatsSorted(pairs)
+
+    // Find best pair for topPair display
     let bestPair: { pair: [string, string]; winRate: number } | null = null
-    for (const entry of Object.values(pairStats)) {
-      if (entry.gamesPlayed === 0) continue
+    for (const entry of pairs) {
       const winRate = (entry.gamesWon / entry.gamesPlayed) * 100
       if (!bestPair || winRate > bestPair.winRate) {
         bestPair = { pair: entry.pair, winRate }
@@ -199,7 +221,7 @@ export default function StatsPage() {
         ))}
       </div>
 
-      <Card>
+      <Card className="mb-6">
         <CardHeader>
           <CardTitle>Player Rankings</CardTitle>
           <CardDescription>
@@ -240,6 +262,57 @@ export default function StatsPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Pair Rankings</CardTitle>
+          <CardDescription>
+            Ranked by win rate and games played ({timeFilter === "all" ? "all time" : timeFilter})
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {pairStatsSorted.length === 0 ? (
+            <p className="text-muted-foreground">No pair data available for the selected time period.</p>
+          ) : (
+            <div className="space-y-4">
+              {pairStatsSorted.map((pairStat, index) => {
+                const player1 = players.find(p => p.id === pairStat.pair[0])?.name || "?"
+                const player2 = players.find(p => p.id === pairStat.pair[1])?.name || "?"
+                const winRate = ((pairStat.gamesWon / pairStat.gamesPlayed) * 100)
+                return (
+                  <div key={pairStat.pair.join("-")} className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 border rounded-lg gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-semibold">{player1} & {player2}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {pairStat.gamesPlayed} games
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-6 sm:text-right text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Win Rate</p>
+                        <p className="font-bold text-lg">{winRate.toFixed(1)}%</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Games Played</p>
+                        <p className="font-bold">{pairStat.gamesPlayed}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Avg Points</p>
+                        <p className="font-bold">{pairStat.averagePoints.toFixed(1)}</p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </CardContent>
