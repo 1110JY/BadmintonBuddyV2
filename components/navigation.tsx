@@ -6,6 +6,8 @@ import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Home, Users, Calendar, BarChart3, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Trophy } from "lucide-react"
+
 
 const navigation = [
   { name: "Home", href: "/", icon: Home },
@@ -23,10 +25,18 @@ export function Navigation() {
       <nav className="border-b bg-white shadow-md sticky top-0 z-50">
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="font-bold text-xl md:text-2xl text-black">
-              🏸 <span className="hidden sm:inline">Badminton Manager</span>
-              <span className="sm:hidden">Badminton Manager</span>
-            </Link>
+<Link href="/" className="flex items-center space-x-2">
+  <div className="w-10 h-10 bg-red-500 rounded-md rotate-12 flex items-center justify-center">
+    <Trophy className="w-6 h-6 text-white" />
+  </div>
+  <div>
+    <h1 className="text-xl font-bold text-gray-900 leading-none">
+      BADMINTON
+      <span className="block text-sm font-medium text-red-500 -mt-1">MANAGER</span>
+    </h1>
+  </div>
+</Link>
+
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex space-x-6">
