@@ -182,43 +182,31 @@ export default function StatsPage() {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-          <Select
-            value={selectedSessionId ?? timeFilter}
-            onValueChange={(value) => {
-              if (value === "all" || value === "week" || value === "month" || value === "year") {
-                setSelectedSessionId(null)
-                setTimeFilter(value)
-              } else {
-                setSelectedSessionId(value)
-              }
-            }}
-          >
-            <SelectTrigger className="w-48 sm:w-56">
-              <SelectValue>
-                {selectedSessionId
-                  ? sessions.find(s => s.id === selectedSessionId)?.date || "Select Session"
-                  : timeFilter === "all" ? "All Time" :
-                    timeFilter === "week" ? "Last Week" :
-                    timeFilter === "month" ? "Last Month" :
-                    timeFilter === "year" ? "Last Year" : "Select Time"
-                }
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Time</SelectItem>
-              <SelectItem value="week">Last Week</SelectItem>
-              <SelectItem value="month">Last Month</SelectItem>
-              <SelectItem value="year">Last Year</SelectItem>
-              <SelectItem disabled>────────────</SelectItem>
-              {sessions.map(session => (
-                <SelectItem key={session.id} value={session.id}>
-                  {new Date(session.date).toLocaleDateString(undefined, {
-                    weekday: "short", year: "numeric", month: "short", day: "numeric"
-                  })}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+<Select
+  value={selectedSessionId}
+  onValueChange={(value) => {
+    setSelectedSessionId(value)
+  }}
+>
+  <SelectTrigger className="w-48 sm:w-56">
+    <SelectValue>
+      {selectedSessionId
+        ? sessions.find(s => s.id === selectedSessionId)?.date || "Select Session"
+        : "Select Session"
+      }
+    </SelectValue>
+  </SelectTrigger>
+  <SelectContent>
+    {sessions.map(session => (
+      <SelectItem key={session.id} value={session.id}>
+        {new Date(session.date).toLocaleDateString(undefined, {
+          weekday: "short", year: "numeric", month: "short", day: "numeric"
+        })}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+
 
           <Button onClick={exportStatsToCSV} variant="outline">
             <Download className="mr-2 h-4 w-4" />
