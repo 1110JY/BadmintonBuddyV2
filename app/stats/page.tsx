@@ -36,6 +36,7 @@ export default function StatsPage() {
   const [topPair, setTopPair] = useState<{ pair: [string, string]; winRate: number } | null>(null)
   const [pairStatsSorted, setPairStatsSorted] = useState<PairStats[]>([])
   const [timeFilter, setTimeFilter] = useState("all")
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
 
   useEffect(() => {
     const savedPlayers = localStorage.getItem("badminton-players")
@@ -46,9 +47,14 @@ export default function StatsPage() {
 
   useEffect(() => {
     if (players.length && sessions.length) calculateStats()
-  }, [players, sessions, timeFilter])
+  }, [players, sessions, timeFilter, selectedSessionId])
 
   const getFilteredSessions = () => {
+    if (selectedSessionId) {
+      const session = sessions.find(s => s.id === selectedSessionId)
+      return session ? [session] : []
+    }
+
     const now = new Date()
     const cutoff = new Date()
     switch (timeFilter) {
@@ -124,11 +130,10 @@ export default function StatsPage() {
         ...p,
         averagePoints: p.totalPoints / p.gamesPlayed,
       }))
-      .sort((a, b) => b.winRate - a.winRate || b.gamesPlayed - a.gamesPlayed) // will fix winRate next
-
-    // Add winRate to pairs for sorting
+    
+    // Add winRate for sorting
     pairs.forEach(p => {
-      (p as any).winRate = (p.gamesWon / p.gamesPlayed) * 100
+      ;(p as any).winRate = (p.gamesWon / p.gamesPlayed) * 100
     })
     pairs.sort((a, b) => (b as any).winRate - (a as any).winRate || b.gamesPlayed - a.gamesPlayed)
 
@@ -159,7 +164,7 @@ export default function StatsPage() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url
-    link.download = `badminton-stats-${timeFilter}.csv`
+    link.download = `badminton-stats-${selectedSessionId ?? timeFilter}.csv`
     link.click()
     URL.revokeObjectURL(url)
   }
@@ -177,17 +182,44 @@ export default function StatsPage() {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-          <Select value={timeFilter} onValueChange={setTimeFilter}>
-            <SelectTrigger className="w-36 sm:w-40">
-              <SelectValue />
+          <Select
+            value={selectedSessionId ?? timeFilter}
+            onValueChange={(value) => {
+              if (value === "all" || value === "week" || value === "month" || value === "year") {
+                setSelectedSessionId(null)
+                setTimeFilter(value)
+              } else {
+                setSelectedSessionId(value)
+              }
+            }}
+          >
+            <SelectTrigger className="w-48 sm:w-56">
+              <SelectValue>
+                {selectedSessionId
+                  ? sessions.find(s => s.id === selectedSessionId)?.date || "Select Session"
+                  : timeFilter === "all" ? "All Time" :
+                    timeFilter === "week" ? "Last Week" :
+                    timeFilter === "month" ? "Last Month" :
+                    timeFilter === "year" ? "Last Year" : "Select Time"
+                }
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Time</SelectItem>
               <SelectItem value="week">Last Week</SelectItem>
               <SelectItem value="month">Last Month</SelectItem>
               <SelectItem value="year">Last Year</SelectItem>
+              <SelectItem disabled>────────────</SelectItem>
+              {sessions.map(session => (
+                <SelectItem key={session.id} value={session.id}>
+                  {new Date(session.date).toLocaleDateString(undefined, {
+                    weekday: "short", year: "numeric", month: "short", day: "numeric"
+                  })}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
+
           <Button onClick={exportStatsToCSV} variant="outline">
             <Download className="mr-2 h-4 w-4" />
             Export CSV
@@ -225,7 +257,7 @@ export default function StatsPage() {
         <CardHeader>
           <CardTitle>Player Rankings</CardTitle>
           <CardDescription>
-            Ranked by win rate and games played ({timeFilter === "all" ? "all time" : timeFilter})
+            Ranked by win rate and games played ({selectedSessionId ? "session" : (timeFilter === "all" ? "all time" : timeFilter)})
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -271,7 +303,7 @@ export default function StatsPage() {
         <CardHeader>
           <CardTitle>Pair Rankings</CardTitle>
           <CardDescription>
-            Ranked by win rate and games played ({timeFilter === "all" ? "all time" : timeFilter})
+            Ranked by win rate and games played ({selectedSessionId ? "session" : (timeFilter === "all" ? "all time" : timeFilter)})
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -286,7 +318,7 @@ export default function StatsPage() {
                 return (
                   <div key={pairStat.pair.join("-")} className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 border rounded-lg gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
+                      <div className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold">
                         {index + 1}
                       </div>
                       <div>
