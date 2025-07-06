@@ -183,20 +183,21 @@ export default function StatsPage() {
         </div>
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
 <Select
-  value={selectedSessionId}
+  value={selectedSessionId ?? "all"}
   onValueChange={(value) => {
-    setSelectedSessionId(value)
+    setSelectedSessionId(value === "all" ? null : value)
   }}
 >
   <SelectTrigger className="w-48 sm:w-56">
     <SelectValue>
       {selectedSessionId
         ? sessions.find(s => s.id === selectedSessionId)?.date || "Select Session"
-        : "Select Session"
+        : "All Sessions"
       }
     </SelectValue>
   </SelectTrigger>
   <SelectContent>
+    <SelectItem value="all">All Sessions</SelectItem>
     {sessions.map(session => (
       <SelectItem key={session.id} value={session.id}>
         {new Date(session.date).toLocaleDateString(undefined, {
@@ -206,6 +207,8 @@ export default function StatsPage() {
     ))}
   </SelectContent>
 </Select>
+
+
 
 
           <Button onClick={exportStatsToCSV} variant="outline">
