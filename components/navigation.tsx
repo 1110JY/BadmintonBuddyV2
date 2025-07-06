@@ -92,7 +92,7 @@ export function Navigation() {
                       className={cn(
                         "flex items-center space-x-3 text-base font-semibold transition-all duration-300 px-4 py-3 rounded-lg",
                         pathname === item.href
-                          ? "bg-gray-900 text-white"
+                          ? "bg-red-500 text-white"
                           : "text-gray-800 hover:bg-gray-100"
                       )}
                     >
