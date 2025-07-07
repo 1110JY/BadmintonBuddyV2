@@ -118,19 +118,19 @@ export default function HomePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <Link href="/players">
-              <Button className="w-full justify-start" variant="outline">
+              <Button className="w-full justify-start my-0.5" variant="outline">
                 <Users className="mr-2 h-4 w-4" />
                 Manage Players
               </Button>
             </Link>
             <Link href="/sessions">
-              <Button className="w-full justify-start" variant="outline">
+              <Button className="w-full justify-start my-0.5" variant="outline">
                 <Calendar className="mr-2 h-4 w-4" />
                 Create New Session
               </Button>
             </Link>
             <Link href="/stats">
-              <Button className="w-full justify-start" variant="outline">
+              <Button className="w-full justify-start my-1" variant="outline">
                 <BarChart3 className="mr-2 h-4 w-4" />
                 View Statistics
               </Button>
