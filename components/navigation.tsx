@@ -32,7 +32,7 @@ export function Navigation() {
   <div>
     <h1 className="text-xl font-bold text-gray-900 leading-none">
       BADMINTON
-      <span className="block text-sm font-medium text-red-500 -mt-1">MANAGER</span>
+      <span className="block text-sm font-medium text-red-500 -mt-1">BUDDY</span>
     </h1>
   </div>
 </Link>

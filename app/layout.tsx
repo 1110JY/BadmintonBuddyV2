@@ -7,8 +7,8 @@ import { Navigation } from "@/components/navigation"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Badminton Club Manager",
-  description: "Manage your badminton club sessions and players",
+  title: "Badminton Buddy",
+  description: "Manage your badminton sessions and players",
   generator: "v0.dev",
 }
 
