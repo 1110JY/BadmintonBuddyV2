@@ -16,7 +16,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Shuffle, Edit, Save, Download, Trash2, X } from "lucide-react"
+import { Shuffle, Edit, Save, Download, Trash2, X, Share2, Copy, Check } from "lucide-react"
+import { supabase } from "@/lib/supabase"
 
 interface Player {
   id: string
@@ -55,6 +56,10 @@ export default function SessionDetailPage() {
   const [manualTeam1Player2, setManualTeam1Player2] = useState("")
   const [manualTeam2Player1, setManualTeam2Player1] = useState("")
   const [manualTeam2Player2, setManualTeam2Player2] = useState("")
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
+  const [shareLink, setShareLink] = useState("")
+  const [isSharing, setIsSharing] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
 
   useEffect(() => {
     const savedPlayers = localStorage.getItem("badminton-players")
@@ -81,6 +86,70 @@ export default function SessionDetailPage() {
       const updatedSessions = sessions.map((s: Session) => (s.id === sessionId ? updatedSession : s))
       localStorage.setItem("badminton-sessions", JSON.stringify(updatedSessions))
       setSession(updatedSession)
+    }
+  }
+
+  const shareSession = async () => {
+    if (!session) return
+
+    setIsSharing(true)
+    try {
+      // First, ensure all players exist in Supabase
+      const playerPromises = players.map(async (player) => {
+        const { error } = await supabase
+          .from('players')
+          .upsert({ 
+            id: player.id, 
+            name: player.name,
+            created_at: player.createdAt 
+          }, { 
+            onConflict: 'id' 
+          })
+        
+        if (error) {
+          console.warn('Error upserting player:', error)
+        }
+      })
+
+      await Promise.all(playerPromises)
+
+      // Save session to Supabase
+      const { error: sessionError } = await supabase
+        .from('sessions')
+        .upsert({
+          id: session.id,
+          date: session.date,
+          players: session.players,
+          games: session.games,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'id'
+        })
+
+      if (sessionError) {
+        throw sessionError
+      }
+
+      // Generate share link
+      const baseUrl = window.location.origin
+      const link = `${baseUrl}/shared/${session.id}`
+      setShareLink(link)
+      setIsShareDialogOpen(true)
+    } catch (error) {
+      console.error('Error sharing session:', error)
+      alert('Failed to share session. Please try again.')
+    } finally {
+      setIsSharing(false)
+    }
+  }
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(shareLink)
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
+    } catch (error) {
+      console.error('Failed to copy link:', error)
     }
   }
 
@@ -219,6 +288,15 @@ export default function SessionDetailPage() {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Button 
+            onClick={shareSession} 
+            variant="outline" 
+            className="w-full sm:w-auto"
+            disabled={isSharing}
+          >
+            <Share2 className="mr-2 h-4 w-4" />
+            {isSharing ? "Sharing..." : "Share Session"}
+          </Button>
           <Button onClick={exportToCSV} variant="outline" className="w-full sm:w-auto">
             <Download className="mr-2 h-4 w-4" />
             Export CSV
@@ -306,6 +384,49 @@ export default function SessionDetailPage() {
           </Button>
         </div>
       </div>
+
+      {/* Share Dialog */}
+      <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Share2 className="h-5 w-5" />
+              Share Session
+            </DialogTitle>
+            <DialogDescription>
+              Your session has been saved and can now be shared with others. Anyone with this link can view the session stats.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Input
+                value={shareLink}
+                readOnly
+                className="flex-1"
+              />
+              <Button
+                onClick={copyToClipboard}
+                size="icon"
+                variant="outline"
+              >
+                {linkCopied ? (
+                  <Check className="h-4 w-4 text-green-600" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            {linkCopied && (
+              <p className="text-sm text-green-600">Link copied to clipboard!</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setIsShareDialogOpen(false)}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid gap-6">
         <Card>
