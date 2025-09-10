@@ -247,6 +247,48 @@ export default function StatsPage() {
         ))}
       </div>
 
+      {/* Player Statistics Table */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Player Statistics</CardTitle>
+          <CardDescription>
+            Performance summary for all players ({selectedSessionId ? "session" : (timeFilter === "all" ? "all time" : timeFilter)})
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {playerStats.length === 0 ? (
+            <p className="text-muted-foreground">No game data available for the selected time period.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2">Player</th>
+                    <th className="text-center py-2">Games</th>
+                    <th className="text-center py-2">W/L</th>
+                    <th className="text-center py-2">Win Rate</th>
+                    <th className="text-center py-2">Points Diff</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {playerStats.map((stat) => (
+                    <tr key={stat.playerId} className="border-b">
+                      <td className="py-3 font-medium">{stat.name}</td>
+                      <td className="text-center py-3">{stat.gamesPlayed}</td>
+                      <td className="text-center py-3 font-medium">{stat.gamesWon}/{stat.gamesLost}</td>
+                      <td className="text-center py-3 font-semibold">{stat.winRate.toFixed(1)}%</td>
+                      <td className={`text-center py-3 font-semibold ${stat.pointsDifference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {stat.pointsDifference > 0 ? '+' : ''}{stat.pointsDifference}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Player Rankings</CardTitle>

@@ -137,6 +137,39 @@ export default function SharedSessionPage() {
     })).sort((a, b) => parseFloat(b.winRate) - parseFloat(a.winRate))
   }
 
+  const calculatePairStats = () => {
+    if (!session) return []
+
+    const pairStats: { [key: string]: { pair: [string, string]; gamesPlayed: number; gamesWon: number; totalPoints: number } } = {}
+
+    // Calculate stats from completed games
+    session.games.filter(game => game.completed).forEach(game => {
+      const team1Won = game.score1 > game.score2
+
+      const processPair = (team: [string, string], won: boolean, score: number) => {
+        const pairKey = [...team].sort().join("-")
+        if (!pairStats[pairKey]) {
+          pairStats[pairKey] = { pair: [...team].sort() as [string, string], gamesPlayed: 0, gamesWon: 0, totalPoints: 0 }
+        }
+        pairStats[pairKey].gamesPlayed++
+        if (won) pairStats[pairKey].gamesWon++
+        pairStats[pairKey].totalPoints += score
+      }
+
+      processPair(game.team1, team1Won, game.score1)
+      processPair(game.team2, !team1Won, game.score2)
+    })
+
+    return Object.values(pairStats)
+      .filter(p => p.gamesPlayed > 0)
+      .map(p => ({
+        ...p,
+        winRate: (p.gamesWon / p.gamesPlayed) * 100,
+        averagePoints: p.totalPoints / p.gamesPlayed,
+      }))
+      .sort((a, b) => b.winRate - a.winRate || b.gamesPlayed - a.gamesPlayed)
+  }
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -167,6 +200,7 @@ export default function SharedSessionPage() {
   }
 
   const playerStats = calculatePlayerStats()
+  const pairStats = calculatePairStats()
   const completedGames = session.games.filter(g => g.completed)
 
   return (
@@ -249,6 +283,55 @@ export default function SharedSessionPage() {
                 </tbody>
               </table>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Pair Rankings */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Pair Rankings</CardTitle>
+            <CardDescription>Performance summary for all pairs in this session</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {pairStats.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No pair data available for this session.</p>
+            ) : (
+              <div className="space-y-4">
+                {pairStats.map((pairStat, index) => {
+                  const player1 = getPlayerName(pairStat.pair[0])
+                  const player2 = getPlayerName(pairStat.pair[1])
+                  return (
+                    <div key={pairStat.pair.join("-")} className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 border rounded-lg gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="font-semibold">{player1} & {player2}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {pairStat.gamesPlayed} games played
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-6 sm:text-right text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Win Rate</p>
+                          <p className="font-bold text-lg">{pairStat.winRate.toFixed(1)}%</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Games Won</p>
+                          <p className="font-bold">{pairStat.gamesWon}/{pairStat.gamesPlayed}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Avg Points</p>
+                          <p className="font-bold">{pairStat.averagePoints.toFixed(1)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
 
