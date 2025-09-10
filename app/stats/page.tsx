@@ -23,7 +23,7 @@ interface Session {
 interface PlayerStats {
   playerId: string; name: string; gamesPlayed: number; gamesWon: number
   gamesLost: number; winRate: number; totalPoints: number
-  averagePoints: number; sessionsPlayed: number
+  averagePoints: number; sessionsPlayed: number; pointsDifference: number
 }
 interface PairStats {
   pair: [string, string]; gamesPlayed: number; gamesWon: number; totalPoints: number; averagePoints: number
@@ -75,7 +75,7 @@ export default function StatsPage() {
       stats[p.id] = {
         playerId: p.id, name: p.name, gamesPlayed: 0,
         gamesWon: 0, gamesLost: 0, winRate: 0,
-        totalPoints: 0, averagePoints: 0, sessionsPlayed: 0
+        totalPoints: 0, averagePoints: 0, sessionsPlayed: 0, pointsDifference: 0
       }
     })
 
@@ -85,7 +85,7 @@ export default function StatsPage() {
         if (!game.completed) return
         const team1Won = game.score1 > game.score2
 
-        const processTeam = (team: [string, string], won: boolean, score: number) => {
+        const processTeam = (team: [string, string], won: boolean, score: number, opponentScore: number) => {
           const pairKey = [...team].sort().join("-")
           if (!pairStats[pairKey]) {
             pairStats[pairKey] = { pair: [...team].sort() as [string, string], gamesPlayed: 0, gamesWon: 0, totalPoints: 0 }
@@ -94,18 +94,21 @@ export default function StatsPage() {
           if (won) pairStats[pairKey].gamesWon++
           pairStats[pairKey].totalPoints += score
 
+          const pointsDiff = score - opponentScore
+
           team.forEach(pid => {
             sessionPlayers.add(pid)
             if (stats[pid]) {
               stats[pid].gamesPlayed++
               stats[pid].totalPoints += score
+              stats[pid].pointsDifference += pointsDiff
               won ? stats[pid].gamesWon++ : stats[pid].gamesLost++
             }
           })
         }
 
-        processTeam(game.team1, team1Won, game.score1)
-        processTeam(game.team2, !team1Won, game.score2)
+        processTeam(game.team1, team1Won, game.score1, game.score2)
+        processTeam(game.team2, !team1Won, game.score2, game.score1)
       })
       sessionPlayers.forEach(pid => stats[pid] && stats[pid].sessionsPlayed++)
     })
@@ -277,6 +280,12 @@ export default function StatsPage() {
                     <div>
                       <p className="text-muted-foreground">W/L</p>
                       <p className="font-bold">{stat.gamesWon}/{stat.gamesLost}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Points Diff</p>
+                      <p className={`font-bold ${stat.pointsDifference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {stat.pointsDifference > 0 ? '+' : ''}{stat.pointsDifference}
+                      </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Avg Points</p>

@@ -92,24 +92,27 @@ export default function SharedSessionPage() {
   const calculatePlayerStats = () => {
     if (!session) return []
 
-    const stats: { [playerId: string]: { wins: number; losses: number; gamesPlayed: number } } = {}
+    const stats: { [playerId: string]: { wins: number; losses: number; gamesPlayed: number; pointsDifference: number } } = {}
 
     // Initialize stats for all players
     session.players.forEach(playerId => {
-      stats[playerId] = { wins: 0, losses: 0, gamesPlayed: 0 }
+      stats[playerId] = { wins: 0, losses: 0, gamesPlayed: 0, pointsDifference: 0 }
     })
 
     // Calculate stats from completed games
     session.games.filter(game => game.completed).forEach(game => {
       const team1Won = game.score1 > game.score2
+      const pointsDiff = Math.abs(game.score1 - game.score2)
       
       // Team 1 players
       game.team1.forEach(playerId => {
         stats[playerId].gamesPlayed++
         if (team1Won) {
           stats[playerId].wins++
+          stats[playerId].pointsDifference += pointsDiff
         } else {
           stats[playerId].losses++
+          stats[playerId].pointsDifference -= pointsDiff
         }
       })
 
@@ -118,8 +121,10 @@ export default function SharedSessionPage() {
         stats[playerId].gamesPlayed++
         if (!team1Won) {
           stats[playerId].wins++
+          stats[playerId].pointsDifference += pointsDiff
         } else {
           stats[playerId].losses++
+          stats[playerId].pointsDifference -= pointsDiff
         }
       })
     })
@@ -224,9 +229,9 @@ export default function SharedSessionPage() {
                   <tr className="border-b">
                     <th className="text-left py-2">Player</th>
                     <th className="text-center py-2">Games</th>
-                    <th className="text-center py-2">Wins</th>
-                    <th className="text-center py-2">Losses</th>
+                    <th className="text-center py-2">W/L</th>
                     <th className="text-center py-2">Win Rate</th>
+                    <th className="text-center py-2">Points Diff</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -234,9 +239,11 @@ export default function SharedSessionPage() {
                     <tr key={stat.playerId} className="border-b">
                       <td className="py-3 font-medium">{stat.name}</td>
                       <td className="text-center py-3">{stat.gamesPlayed}</td>
-                      <td className="text-center py-3 text-green-600">{stat.wins}</td>
-                      <td className="text-center py-3 text-red-600">{stat.losses}</td>
+                      <td className="text-center py-3 font-medium">{stat.wins}/{stat.losses}</td>
                       <td className="text-center py-3 font-semibold">{stat.winRate}%</td>
+                      <td className={`text-center py-3 font-semibold ${stat.pointsDifference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {stat.pointsDifference > 0 ? '+' : ''}{stat.pointsDifference}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -265,7 +272,10 @@ export default function SharedSessionPage() {
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-blue-100 text-blue-800'
                       }`}>
-                        {game.score1 > game.score2 ? 'Team 1 Won' : 'Team 2 Won'}
+                        {game.score1 > game.score2 
+                          ? `${getPlayerName(game.team1[0])} & ${getPlayerName(game.team1[1])} Won`
+                          : `${getPlayerName(game.team2[0])} & ${getPlayerName(game.team2[1])} Won`
+                        }
                       </span>
                     </div>
                     
