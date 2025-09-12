@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Shuffle, Edit, Save, Download, Trash2, X, Share2, Copy, Check } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabase, playerService, sessionService } from "@/lib/supabase"
 
 interface Player {
   id: string
@@ -60,32 +60,49 @@ export default function SessionDetailPage() {
   const [shareLink, setShareLink] = useState("")
   const [isSharing, setIsSharing] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const savedPlayers = localStorage.getItem("badminton-players")
-    const savedSessions = localStorage.getItem("badminton-sessions")
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
 
-    if (savedPlayers) {
-      setPlayers(JSON.parse(savedPlayers))
+        // Load players and session from Supabase
+        const [playersData, sessionData] = await Promise.all([
+          playerService.getAll(),
+          sessionService.getById(sessionId)
+        ])
+
+        setPlayers(playersData)
+        setSession(sessionData)
+      } catch (err) {
+        console.error('Error loading session data:', err)
+        setError('Failed to load session data')
+      } finally {
+        setLoading(false)
+      }
     }
-    if (savedSessions) {
-      const sessions = JSON.parse(savedSessions)
-      const currentSession = sessions.find((s: Session) => s.id === sessionId)
-      setSession(currentSession)
-    }
+
+    loadData()
   }, [sessionId])
 
   const getPlayerName = (playerId: string) => {
     return players.find((p) => p.id === playerId)?.name || "Unknown"
   }
 
-  const saveSession = (updatedSession: Session) => {
-    const savedSessions = localStorage.getItem("badminton-sessions")
-    if (savedSessions) {
-      const sessions = JSON.parse(savedSessions)
-      const updatedSessions = sessions.map((s: Session) => (s.id === sessionId ? updatedSession : s))
-      localStorage.setItem("badminton-sessions", JSON.stringify(updatedSessions))
-      setSession(updatedSession)
+  const saveSession = async (updatedSession: Session) => {
+    try {
+      const updated = await sessionService.update(sessionId, {
+        date: updatedSession.date,
+        players: updatedSession.players,
+        games: updatedSession.games
+      })
+      setSession(updated)
+    } catch (err) {
+      console.error('Error saving session:', err)
+      setError('Failed to save session')
     }
   }
 
@@ -153,7 +170,7 @@ export default function SessionDetailPage() {
     }
   }
 
-  const generateRandomPairings = () => {
+  const generateRandomPairings = async () => {
     if (!session) return
 
     const availablePlayers = [...session.players]
@@ -177,10 +194,10 @@ export default function SessionDetailPage() {
     }
 
     const updatedSession = { ...session, games: [...session.games, ...newGames] }
-    saveSession(updatedSession)
+    await saveSession(updatedSession)
   }
 
-  const addManualPairing = () => {
+  const addManualPairing = async () => {
     if (!session || !manualTeam1Player1 || !manualTeam1Player2 || !manualTeam2Player1 || !manualTeam2Player2) return
 
     const newGame: Game = {
@@ -193,7 +210,7 @@ export default function SessionDetailPage() {
     }
 
     const updatedSession = { ...session, games: [...session.games, newGame] }
-    saveSession(updatedSession)
+    await saveSession(updatedSession)
 
     setManualTeam1Player1("")
     setManualTeam1Player2("")
@@ -209,7 +226,7 @@ export default function SessionDetailPage() {
     setIsEditDialogOpen(true)
   }
 
-  const saveScore = () => {
+  const saveScore = async () => {
     if (!session || !editingGame) return
 
     const updatedGames = session.games.map((game) =>
@@ -224,28 +241,27 @@ export default function SessionDetailPage() {
     )
 
     const updatedSession = { ...session, games: updatedGames }
-    saveSession(updatedSession)
+    await saveSession(updatedSession)
     setIsEditDialogOpen(false)
     setEditingGame(null)
   }
 
-  const deleteGame = (gameId: string) => {
+  const deleteGame = async (gameId: string) => {
     if (!session) return
 
     const updatedGames = session.games.filter((game) => game.id !== gameId)
     const updatedSession = { ...session, games: updatedGames }
-    saveSession(updatedSession)
+    await saveSession(updatedSession)
   }
 
-  const deleteSession = () => {
-    const savedSessions = localStorage.getItem("badminton-sessions")
-    if (!savedSessions || !session) return
-
-    const sessions = JSON.parse(savedSessions)
-    const updatedSessions = sessions.filter((s: Session) => s.id !== session.id)
-    localStorage.setItem("badminton-sessions", JSON.stringify(updatedSessions))
-
-    window.location.href = "/sessions"
+  const deleteSession = async () => {
+    try {
+      await sessionService.delete(sessionId)
+      window.location.href = "/sessions"
+    } catch (err) {
+      console.error('Error deleting session:', err)
+      setError('Failed to delete session')
+    }
   }
 
   const exportToCSV = () => {
@@ -272,6 +288,30 @@ export default function SessionDetailPage() {
     a.download = `badminton-session-${session.date}.csv`
     a.click()
     window.URL.revokeObjectURL(url)
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          <span className="ml-3">Loading session...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   if (!session) {
