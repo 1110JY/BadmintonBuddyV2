@@ -71,7 +71,9 @@ export default function SessionsPage() {
         sessionService.getAll()
       ])
       setPlayers(playersData)
-      setSessions(sessionsData)
+      // Ensure sessions are sorted newest-first
+      const sortedSessions = [...sessionsData].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      setSessions(sortedSessions)
       setError(null)
     } catch (err) {
       setError('Failed to load data')
@@ -342,9 +344,8 @@ export default function SessionsPage() {
             <FadeIn delay={0.8}>
               <div className="space-y-6">
                 <AnimatePresence>
-                  {sessions
-                    .slice()
-                    .reverse()
+                  { [...sessions]
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                     .map((session, index) => (
                       <motion.div
                         key={session.id}

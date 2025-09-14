@@ -59,7 +59,11 @@ export default function StatsPage() {
         sessionService.getAll()
       ])
       setPlayers(playersData)
-      setSessions(sessionsData)
+      
+      // Sort sessions by date descending (newest first)
+      const sortedSessions = [...sessionsData].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      setSessions(sortedSessions)
+      
       setError(null)
     } catch (err) {
       setError('Failed to load data')
@@ -248,13 +252,15 @@ export default function StatsPage() {
                     </SelectTrigger>
                     <SelectContent className="dark:bg-white/95 dark:shadow-white/30">
                       <SelectItem value="all" className="dark:text-slate-900">All Sessions</SelectItem>
-                      {sessions.map(session => (
-                        <SelectItem key={session.id} value={session.id} className="dark:text-slate-900">
-                          {new Date(session.date).toLocaleDateString(undefined, {
-                            weekday: "short", year: "numeric", month: "short", day: "numeric"
-                          })}
-                        </SelectItem>
-                      ))}
+                      {[...sessions]
+                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                        .map(session => (
+                          <SelectItem key={session.id} value={session.id} className="dark:text-slate-900">
+                            {new Date(session.date).toLocaleDateString(undefined, {
+                              weekday: "short", year: "numeric", month: "short", day: "numeric"
+                            })}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
 

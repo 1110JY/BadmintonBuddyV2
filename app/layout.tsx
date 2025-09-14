@@ -54,7 +54,8 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/Favicon.png" type="image/png" />
       </head>
-      <body className={`${plusJakartaSans.className} ${outfit.variable}`}>
+      {/* suppressHydrationWarning on body to avoid console warnings from browser extensions that inject attributes (e.g., Grammarly) or other client-only mutations which are harmless */}
+      <body suppressHydrationWarning className={`${plusJakartaSans.className} ${outfit.variable}`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

@@ -92,6 +92,31 @@ export default function SessionDetailPage() {
     return players.find((p) => p.id === playerId)?.name || "Unknown"
   }
 
+  const getGamesPlayedCount = (playerId: string) => {
+    if (!session) return 0
+    return session.games.reduce((count, game) => (
+      count + (game.team1.includes(playerId) || game.team2.includes(playerId) ? 1 : 0)
+    ), 0)
+  }
+
+  // Return Tailwind classes for a badge color based on games played (0..9+)
+  const getBadgeClasses = (count: number) => {
+    const idx = Math.max(0, Math.min(count, 9))
+    const classes = [
+      'bg-emerald-50 text-emerald-800 border-emerald-100', // 0
+      'bg-emerald-100 text-emerald-800 border-emerald-200', // 1
+      'bg-emerald-200 text-emerald-900 border-emerald-300', // 2
+      'bg-emerald-300 text-emerald-900 border-emerald-400', // 3
+      'bg-amber-100 text-amber-800 border-amber-200',       // 4
+      'bg-amber-200 text-amber-900 border-amber-300',       // 5
+      'bg-amber-300 text-amber-900 border-amber-400',       // 6
+      'bg-red-100 text-red-700 border-red-200',             // 7
+      'bg-red-200 text-red-800 border-red-300',             // 8
+      'bg-red-300 text-red-900 border-red-400',             // 9+
+    ]
+    return classes[idx]
+  }
+
   const saveSession = async (updatedSession: Session) => {
     try {
       const updated = await sessionService.update(sessionId, {
@@ -375,21 +400,41 @@ export default function SessionDetailPage() {
                     <Select value={manualTeam1Player1} onValueChange={setManualTeam1Player1}>
                       <SelectTrigger><SelectValue placeholder="Player 1" /></SelectTrigger>
                       <SelectContent>
-                        {session.players.map((playerId) => (
-                          <SelectItem key={playerId} value={playerId}>
-                            {getPlayerName(playerId)}
-                          </SelectItem>
-                        ))}
+                        {session.players
+                          .filter(pid => ![manualTeam1Player2, manualTeam2Player1, manualTeam2Player2].includes(pid) || pid === manualTeam1Player1)
+                          .map((playerId) => {
+                            const count = getGamesPlayedCount(playerId)
+                            return (
+                              <SelectItem key={playerId} value={playerId}>
+                                <div className="flex items-center gap-2 w-full">
+                                  <span className="truncate max-w-[12rem]">{getPlayerName(playerId)}</span>
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getBadgeClasses(count)}`}>
+                                    {count}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            )
+                          })}
                       </SelectContent>
                     </Select>
                     <Select value={manualTeam1Player2} onValueChange={setManualTeam1Player2}>
                       <SelectTrigger><SelectValue placeholder="Player 2" /></SelectTrigger>
                       <SelectContent>
-                        {session.players.map((playerId) => (
-                          <SelectItem key={playerId} value={playerId}>
-                            {getPlayerName(playerId)}
-                          </SelectItem>
-                        ))}
+                        {session.players
+                          .filter(pid => ![manualTeam1Player1, manualTeam2Player1, manualTeam2Player2].includes(pid) || pid === manualTeam1Player2)
+                          .map((playerId) => {
+                            const count = getGamesPlayedCount(playerId)
+                            return (
+                              <SelectItem key={playerId} value={playerId}>
+                                <div className="flex items-center gap-2 w-full">
+                                  <span className="truncate max-w-[12rem]">{getPlayerName(playerId)}</span>
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getBadgeClasses(count)}`}>
+                                    {count}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            )
+                          })}
                       </SelectContent>
                     </Select>
                   </div>
@@ -400,28 +445,53 @@ export default function SessionDetailPage() {
                     <Select value={manualTeam2Player1} onValueChange={setManualTeam2Player1}>
                       <SelectTrigger><SelectValue placeholder="Player 1" /></SelectTrigger>
                       <SelectContent>
-                        {session.players.map((playerId) => (
-                          <SelectItem key={playerId} value={playerId}>
-                            {getPlayerName(playerId)}
-                          </SelectItem>
-                        ))}
+                        {session.players
+                          .filter(pid => ![manualTeam1Player1, manualTeam1Player2, manualTeam2Player2].includes(pid) || pid === manualTeam2Player1)
+                          .map((playerId) => {
+                            const count = getGamesPlayedCount(playerId)
+                            return (
+                              <SelectItem key={playerId} value={playerId}>
+                                <div className="flex items-center gap-2 w-full">
+                                  <span className="truncate max-w-[12rem]">{getPlayerName(playerId)}</span>
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getBadgeClasses(count)}`}>
+                                    {count}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            )
+                          })}
                       </SelectContent>
                     </Select>
                     <Select value={manualTeam2Player2} onValueChange={setManualTeam2Player2}>
                       <SelectTrigger><SelectValue placeholder="Player 2" /></SelectTrigger>
                       <SelectContent>
-                        {session.players.map((playerId) => (
-                          <SelectItem key={playerId} value={playerId}>
-                            {getPlayerName(playerId)}
-                          </SelectItem>
-                        ))}
+                        {session.players
+                          .filter(pid => ![manualTeam1Player1, manualTeam1Player2, manualTeam2Player1].includes(pid) || pid === manualTeam2Player2)
+                          .map((playerId) => {
+                            const count = getGamesPlayedCount(playerId)
+                            return (
+                              <SelectItem key={playerId} value={playerId}>
+                                <div className="flex items-center gap-2 w-full">
+                                  <span className="truncate max-w-[12rem]">{getPlayerName(playerId)}</span>
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getBadgeClasses(count)}`}>
+                                    {count}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            )
+                          })}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={addManualPairing}>Add Pairing</Button>
+                <Button
+                  onClick={addManualPairing}
+                  disabled={!(manualTeam1Player1 && manualTeam1Player2 && manualTeam2Player1 && manualTeam2Player2) || new Set([manualTeam1Player1, manualTeam1Player2, manualTeam2Player1, manualTeam2Player2]).size !== 4}
+                >
+                  Add Pairing
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -484,12 +554,22 @@ export default function SessionDetailPage() {
           <CardHeader><CardTitle>Players in Session</CardTitle></CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {session.players.map((playerId) => (
-                <span key={playerId} className="px-3 py-1 bg-secondary text-secondary-foreground rounded-md text-sm">
-                  {getPlayerName(playerId)}
-                </span>
-              ))}
-            </div>
+                   {session.players.map((playerId) => {
+                     // Count how many games this player appears in (completed or not)
+                     const gamesPlayedCount = session.games.reduce((count, game) => (
+                       count + (game.team1.includes(playerId) || game.team2.includes(playerId) ? 1 : 0)
+                     ), 0)
+
+                     return (
+                  <span key={playerId} className="px-3 py-1 bg-secondary text-secondary-foreground rounded-md text-sm flex items-center gap-2">
+                    <span>{getPlayerName(playerId)}</span>
+                    <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium border ${getBadgeClasses(gamesPlayedCount)}`}>
+                      {gamesPlayedCount}
+                    </span>
+                  </span>
+                     )
+                   })}
+                 </div>
           </CardContent>
         </Card>
 
