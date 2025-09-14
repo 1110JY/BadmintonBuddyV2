@@ -107,11 +107,13 @@ export default function SessionDetailPage() {
   }
 
   const shareSession = async () => {
-    if (!session) return
-
-    setIsSharing(true)
+    if (!session) {
+      alert('No session loaded.');
+      return;
+    }
+    setIsSharing(true);
     try {
-      // First, ensure all players exist in Supabase
+      // Ensure all players exist in Supabase
       const playerPromises = players.map(async (player) => {
         const { error } = await supabase
           .from('players')
@@ -121,42 +123,51 @@ export default function SessionDetailPage() {
             created_at: player.createdAt 
           }, { 
             onConflict: 'id' 
-          })
-        
+          });
         if (error) {
-          console.warn('Error upserting player:', error)
+          console.warn('Error upserting player:', error);
         }
-      })
-
-      await Promise.all(playerPromises)
+      });
+      await Promise.all(playerPromises);
 
       // Save session to Supabase
-      const { error: sessionError } = await supabase
+      // Always include device_id for privacy and RLS
+      const deviceId = typeof window !== 'undefined' ? localStorage.getItem('badminton_buddy_device_id') : 'server_temp_id';
+      const { data, error: sessionError } = await supabase
         .from('sessions')
         .upsert({
           id: session.id,
           date: session.date,
           players: session.players,
           games: session.games,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          device_id: deviceId || 'unknown_device'
         }, {
           onConflict: 'id'
         })
+        .select()
+        .single();
 
       if (sessionError) {
-        throw sessionError
+        console.error('Error upserting session:', sessionError);
+        alert(`Failed to share session: ${sessionError.message || JSON.stringify(sessionError)}`);
+        return;
+      }
+      if (!data || !data.id) {
+        alert('Failed to share session: No session data returned.');
+        return;
       }
 
       // Generate share link
-      const baseUrl = window.location.origin
-      const link = `${baseUrl}/shared/${session.id}`
-      setShareLink(link)
-      setIsShareDialogOpen(true)
+      const baseUrl = window.location.origin;
+      const link = `${baseUrl}/shared/${data.id}`;
+      setShareLink(link);
+      setIsShareDialogOpen(true);
     } catch (error) {
-      console.error('Error sharing session:', error)
-      alert('Failed to share session. Please try again.')
+      console.error('Error sharing session:', error);
+  alert(`Failed to share session: ${typeof error === 'object' && error !== null && 'message' in error ? (error as any).message : String(error)}`);
     } finally {
-      setIsSharing(false)
+      setIsSharing(false);
     }
   }
 

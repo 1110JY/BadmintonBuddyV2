@@ -23,9 +23,9 @@ export const metadata: Metadata = {
   generator: "v0.dev",
   applicationName: "Badminton Buddy",
   keywords: ["badminton", "sports", "session management", "player tracking", "games"],
-  authors: [{ name: "Badminton Buddy Team" }],
-  creator: "Badminton Buddy",
-  publisher: "Badminton Buddy",
+  authors: [{ name: "Josh.Y" }],
+  creator: "Josh.Y",
+  publisher: "Josh.Y",
   formatDetection: {
     email: false,
     address: false,
