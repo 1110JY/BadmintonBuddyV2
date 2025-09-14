@@ -2,8 +2,11 @@
 
 A modern, full-stack web application for managing badminton sessions, tracking players, and organizing games with beautiful UI and device-based privacy.
 
+<<<<<<< HEAD
 ![Badminton Buddy](./public/Favicon.png)
 
+=======
+>>>>>>> 2fad8360a4cc0d1f0e213279ddb27dee13b42c69
 ## ✨ Features
 
 ### 🎯 **Session Management**
@@ -69,6 +72,7 @@ A modern, full-stack web application for managing badminton sessions, tracking p
 - **PostCSS** - CSS processing
 - **Autoprefixer** - CSS vendor prefixes
 
+<<<<<<< HEAD
 ## 📁 Project Structure
 
 ```
@@ -100,6 +104,8 @@ badminton-buddy/
 └── styles/                    # Additional stylesheets
 ```
 
+=======
+>>>>>>> 2fad8360a4cc0d1f0e213279ddb27dee13b42c69
 ## 🛠️ Installation & Setup
 
 ### **Prerequisites**
@@ -266,4 +272,8 @@ If you encounter any issues or have questions:
 
 ---
 
+<<<<<<< HEAD
 **Made with ❤️ for the badminton community** 🏸
+=======
+**Made with ❤️ for the badminton community** 🏸
+>>>>>>> 2fad8360a4cc0d1f0e213279ddb27dee13b42c69
