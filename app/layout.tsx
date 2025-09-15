@@ -33,13 +33,13 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/Favicon.png', type: 'image/png' },
-      { url: '/Favicon.png', sizes: '32x32', type: 'image/png' },
-      { url: '/Favicon.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon.png', type: 'image/png' },
+      { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.png', sizes: '16x16', type: 'image/png' },
     ],
-    shortcut: '/Favicon.png',
+    shortcut: '/favicon.png',
     apple: [
-      { url: '/Favicon.png', sizes: '180x180', type: 'image/png' },
+      { url: '/favicon.png', sizes: '180x180', type: 'image/png' },
     ],
   },
 }
@@ -52,7 +52,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/Favicon.png" type="image/png" />
+        <link rel="icon" href="/favicon.png" type="image/png" />
       </head>
       {/* suppressHydrationWarning on body to avoid console warnings from browser extensions that inject attributes (e.g., Grammarly) or other client-only mutations which are harmless */}
       <body suppressHydrationWarning className={`${plusJakartaSans.className} ${outfit.variable}`}>
