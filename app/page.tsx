@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { sessionService, playerService } from "@/lib/supabase"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -37,15 +38,19 @@ export default function HomePage() {
   const [sessions, setSessions] = useState<Session[]>([])
 
   useEffect(() => {
-    const savedPlayers = localStorage.getItem("badminton-players")
-    const savedSessions = localStorage.getItem("badminton-sessions")
-
-    if (savedPlayers) {
-      setPlayers(JSON.parse(savedPlayers))
+    async function fetchData() {
+      try {
+        const [playersData, sessionsData] = await Promise.all([
+          playerService.getAll(),
+          sessionService.getAll(),
+        ])
+        setPlayers(playersData)
+        setSessions(sessionsData)
+      } catch (err) {
+        console.error("Failed to fetch stats:", err)
+      }
     }
-    if (savedSessions) {
-      setSessions(JSON.parse(savedSessions))
-    }
+    fetchData()
   }, [])
 
   const totalGames = sessions.reduce((acc, session) => acc + session.games.length, 0)
