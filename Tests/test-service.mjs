@@ -1,5 +1,5 @@
 // Test our actual service function
-import { playerService } from './lib/supabase.js'
+import { playerService } from '../lib/supabase.js'
 
 async function testServiceFunction() {
   try {
