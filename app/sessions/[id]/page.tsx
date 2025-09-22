@@ -1,5 +1,4 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -42,6 +41,15 @@ interface Game {
 }
 
 export default function SessionDetailPage() {
+
+  // Returns how many games a pair has played together on the same team
+  const getPairGamesPlayedCount = (playerA: string, playerB: string) => {
+    if (!session || !playerA || !playerB) return 0;
+    return session.games.filter((game: Game) =>
+      (game.team1.includes(playerA) && game.team1.includes(playerB)) ||
+      (game.team2.includes(playerA) && game.team2.includes(playerB))
+    ).length;
+  }
   const params = useParams()
   const sessionId = params.id as string
 
@@ -423,7 +431,8 @@ export default function SessionDetailPage() {
                         {session.players
                           .filter(pid => ![manualTeam1Player1, manualTeam2Player1, manualTeam2Player2].includes(pid) || pid === manualTeam1Player2)
                           .map((playerId) => {
-                            const count = getGamesPlayedCount(playerId)
+                            const count = getGamesPlayedCount(playerId);
+                            const pairCount = manualTeam1Player1 && playerId ? getPairGamesPlayedCount(manualTeam1Player1, playerId) : 0;
                             return (
                               <SelectItem key={playerId} value={playerId}>
                                 <div className="flex items-center gap-2 w-full">
@@ -431,6 +440,11 @@ export default function SessionDetailPage() {
                                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getBadgeClasses(count)}`}>
                                     {count}
                                   </span>
+                                  {manualTeam1Player1 && playerId && (
+                                    <span className="ml-2 text-xs text-blue-600 bg-blue-50 rounded px-2 py-0.5">
+                                      Pair: {pairCount}
+                                    </span>
+                                  )}
                                 </div>
                               </SelectItem>
                             )
@@ -468,7 +482,8 @@ export default function SessionDetailPage() {
                         {session.players
                           .filter(pid => ![manualTeam1Player1, manualTeam1Player2, manualTeam2Player1].includes(pid) || pid === manualTeam2Player2)
                           .map((playerId) => {
-                            const count = getGamesPlayedCount(playerId)
+                            const count = getGamesPlayedCount(playerId);
+                            const pairCount = manualTeam2Player1 && playerId ? getPairGamesPlayedCount(manualTeam2Player1, playerId) : 0;
                             return (
                               <SelectItem key={playerId} value={playerId}>
                                 <div className="flex items-center gap-2 w-full">
@@ -476,6 +491,11 @@ export default function SessionDetailPage() {
                                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getBadgeClasses(count)}`}>
                                     {count}
                                   </span>
+                                  {manualTeam2Player1 && playerId && (
+                                    <span className="ml-2 text-xs text-blue-600 bg-blue-50 rounded px-2 py-0.5">
+                                      Pair: {pairCount}
+                                    </span>
+                                  )}
                                 </div>
                               </SelectItem>
                             )
