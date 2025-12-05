@@ -205,7 +205,7 @@ export default function SessionsPage() {
                         </Button>
                       </motion.div>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-md w-full dark:bg-white/95 dark:shadow-white/30">
+                    <DialogContent className="sm:max-w-md w-full px-4 sm:px-6 dark:bg-white/95 dark:shadow-white/30">
                       <DialogHeader>
                         <DialogTitle className="dark:text-slate-900">Create New Session</DialogTitle>
                         <DialogDescription className="dark:text-slate-700">
