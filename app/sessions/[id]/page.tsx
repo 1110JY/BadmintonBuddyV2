@@ -15,7 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Shuffle, Edit, Save, Download, Trash2, X, Share2, Copy, Check } from "lucide-react"
+import { Shuffle, Edit, Save, Download, Trash2, X, Share2, Copy, Check, CheckCircle2 } from "lucide-react"
 import { supabase, playerService, sessionService } from "@/lib/supabase"
 
 interface Player {
@@ -38,17 +38,21 @@ interface Game {
   score1: number
   score2: number
   completed: boolean
+  rotation?: number
 }
 
 export default function SessionDetailPage() {
 
   // Returns how many games a pair has played together on the same team
-  const getPairGamesPlayedCount = (playerA: string, playerB: string) => {
+  const getPairGamesPlayedCount = (playerA: string, playerB: string, rotation?: number) => {
     if (!session || !playerA || !playerB) return 0;
-    return session.games.filter((game: Game) =>
-      (game.team1.includes(playerA) && game.team1.includes(playerB)) ||
-      (game.team2.includes(playerA) && game.team2.includes(playerB))
-    ).length;
+    return session.games.filter((game: Game) => {
+      const inRotation = rotation ? ((game.rotation ?? 1) === rotation) : true
+      return inRotation && (
+        (game.team1.includes(playerA) && game.team1.includes(playerB)) ||
+        (game.team2.includes(playerA) && game.team2.includes(playerB))
+      )
+    }).length;
   }
   const params = useParams()
   const sessionId = params.id as string
@@ -68,6 +72,7 @@ export default function SessionDetailPage() {
   const [shareLink, setShareLink] = useState("")
   const [isSharing, setIsSharing] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -100,11 +105,73 @@ export default function SessionDetailPage() {
     return players.find((p) => p.id === playerId)?.name || "Unknown"
   }
 
-  const getGamesPlayedCount = (playerId: string) => {
+  const getActiveRotation = () => {
+    if (!session || session.games.length === 0) return 1
+    return Math.max(...session.games.map((g) => g.rotation ?? 1))
+  }
+
+  const getGamesPlayedCount = (playerId: string, rotation?: number) => {
     if (!session) return 0
-    return session.games.reduce((count, game) => (
-      count + (game.team1.includes(playerId) || game.team2.includes(playerId) ? 1 : 0)
-    ), 0)
+    return session.games
+      .filter((game) => rotation ? (game.rotation ?? 1) === rotation : true)
+      .reduce((count, game) => (
+        count + (game.team1.includes(playerId) || game.team2.includes(playerId) ? 1 : 0)
+      ), 0)
+  }
+
+  // Determine if all unique pairs have played together at least once for a rotation
+  const haveAllPairsPlayedTogether = (rotation: number) => {
+    if (!session || session.players.length < 2) return false
+    const requiredPairs = new Set<string>()
+    for (let i = 0; i < session.players.length; i++) {
+      for (let j = i + 1; j < session.players.length; j++) {
+        const key = [session.players[i], session.players[j]].sort().join("-")
+        requiredPairs.add(key)
+      }
+    }
+
+    const playedPairs = new Set<string>()
+    session.games
+      .filter((game) => (game.rotation ?? 1) === rotation)
+      .forEach((game) => {
+        const pairs = [
+          [game.team1[0], game.team1[1]],
+          [game.team2[0], game.team2[1]],
+        ]
+        pairs.forEach(([a, b]) => {
+          const key = [a, b].sort().join("-")
+          playedPairs.add(key)
+        })
+      })
+
+    return Array.from(requiredPairs).every((pair) => playedPairs.has(pair))
+  }
+
+  // Ensure everyone has played roughly the same number of games (within 1 game spread) for a rotation
+  const isGameCountBalanced = (rotation: number) => {
+    if (!session || session.players.length === 0) return false
+    const counts = session.players.map((pid) => getGamesPlayedCount(pid, rotation))
+    const max = Math.max(...counts)
+    const min = Math.min(...counts)
+    return max - min <= 1
+  }
+
+  const activeRotation = getActiveRotation()
+  const rotationComplete = haveAllPairsPlayedTogether(activeRotation) && isGameCountBalanced(activeRotation)
+  const nextRotation = rotationComplete ? activeRotation + 1 : activeRotation
+  const rotationCount = session?.games.length ? Math.max(...session.games.map((g) => g.rotation ?? 1)) : 1
+
+  const gamesByRotation = () => {
+    if (!session) return []
+    const grouped: Record<number, Game[]> = {}
+    session.games.forEach((game) => {
+      const rotation = game.rotation ?? 1
+      grouped[rotation] = grouped[rotation] ? [...grouped[rotation], game] : [game]
+    })
+    return Object.keys(grouped)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .map((rotation) => ({ rotation, games: grouped[rotation] }))
   }
 
   // Return Tailwind classes for a badge color based on games played (0..9+)
@@ -214,6 +281,203 @@ export default function SessionDetailPage() {
     }
   }
 
+  const generateShareableImage = async () => {
+    if (!session || typeof window === "undefined") return
+    setIsGeneratingImage(true)
+    try {
+      const canvas = document.createElement("canvas")
+      const width = 1400
+      const height = 900
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext("2d")
+      if (!ctx) throw new Error("Canvas not supported")
+
+      const roundRect = (x: number, y: number, w: number, h: number, r: number) => {
+        const radius = Math.min(r, w / 2, h / 2)
+        ctx.beginPath()
+        ctx.moveTo(x + radius, y)
+        ctx.lineTo(x + w - radius, y)
+        ctx.quadraticCurveTo(x + w, y, x + w, y + radius)
+        ctx.lineTo(x + w, y + h - radius)
+        ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h)
+        ctx.lineTo(x + radius, y + h)
+        ctx.quadraticCurveTo(x, y + h, x, y + h - radius)
+        ctx.lineTo(x, y + radius)
+        ctx.quadraticCurveTo(x, y, x + radius, y)
+        ctx.closePath()
+      }
+
+      // Background
+      const gradient = ctx.createLinearGradient(0, 0, 0, height)
+      gradient.addColorStop(0, "#2563eb")
+      gradient.addColorStop(1, "#7c3aed")
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, width, height)
+
+      // Card
+      ctx.fillStyle = "rgba(248,250,252,0.96)"
+      roundRect(70, 50, width - 140, height - 100, 26)
+      ctx.fill()
+
+      // Header
+      ctx.fillStyle = "#0f172a"
+      ctx.font = "54px 'Segoe UI', sans-serif"
+      ctx.fillText("Badminton Buddy Session", 120, 150)
+      ctx.fillStyle = "#475569"
+      ctx.font = "30px 'Segoe UI', sans-serif"
+      ctx.fillText(new Date(session.date).toLocaleDateString(), 120, 200)
+
+      // Completed games only
+      const completedGames = session.games.filter((g) => g.completed)
+
+      // Player stats (wins/losses, win rate, points diff)
+      const playerStats = session.players.map((pid) => {
+        let wins = 0
+        let losses = 0
+        let pointsDiff = 0
+        completedGames.forEach((game) => {
+          const onTeam1 = game.team1.includes(pid)
+          const onTeam2 = game.team2.includes(pid)
+          if (!onTeam1 && !onTeam2) return
+          const teamScore = onTeam1 ? game.score1 : game.score2
+          const oppScore = onTeam1 ? game.score2 : game.score1
+          pointsDiff += teamScore - oppScore
+          if (teamScore > oppScore) wins += 1
+          else if (teamScore < oppScore) losses += 1
+        })
+        const games = wins + losses
+        const winRate = games > 0 ? Math.round((wins / games) * 1000) / 10 : 0
+        return { id: pid, name: getPlayerName(pid), wins, losses, games, winRate, pointsDiff }
+      }).sort((a, b) => b.winRate - a.winRate || b.games - a.games)
+
+      // Pair stats (top 3 by win rate/games)
+      const pairMap: Record<string, { wins: number; games: number; points: number; names: string }> = {}
+      completedGames.forEach((game) => {
+        const teams = [
+          { ids: game.team1, score: game.score1, oppScore: game.score2 },
+          { ids: game.team2, score: game.score2, oppScore: game.score1 },
+        ]
+        teams.forEach(({ ids, score, oppScore }) => {
+          const key = [...ids].sort().join("-")
+          const names = ids.map(getPlayerName).sort().join(" & ")
+          if (!pairMap[key]) pairMap[key] = { wins: 0, games: 0, points: 0, names }
+          pairMap[key].games += 1
+          pairMap[key].points += score
+          if (score > oppScore) pairMap[key].wins += 1
+        })
+      })
+      const pairStats = Object.values(pairMap).map((p) => {
+        const winRate = p.games > 0 ? Math.round((p.wins / p.games) * 1000) / 10 : 0
+        const avgPoints = p.games > 0 ? Math.round((p.points / p.games) * 10) / 10 : 0
+        return { ...p, winRate, avgPoints }
+      }).sort((a, b) => b.winRate - a.winRate || b.games - a.games).slice(0, 3)
+
+      // Layout columns
+      const contentPadding = 120
+      const statsWidth = 880
+      const pairsX = contentPadding + statsWidth + 40
+      const pairsWidth = width - pairsX - contentPadding
+
+      // Player statistics table
+      ctx.fillStyle = "#0f172a"
+      ctx.font = "42px 'Segoe UI', sans-serif"
+      ctx.fillText("Player Statistics", contentPadding, 260)
+      ctx.fillStyle = "#64748b"
+      ctx.font = "24px 'Segoe UI', sans-serif"
+      ctx.fillText("Performance summary for all players (session)", contentPadding, 296)
+
+      const tableStartY = 340
+      const colX = [contentPadding, contentPadding + 280, contentPadding + 470, contentPadding + 650]
+      ctx.fillStyle = "#0f172a"
+      ctx.font = "22px 'Segoe UI', sans-serif"
+      ctx.fillText("Player", colX[0], tableStartY)
+      ctx.fillText("Games W/L", colX[1], tableStartY)
+      ctx.fillText("Win Rate", colX[2], tableStartY)
+      ctx.fillText("Points Diff", colX[3], tableStartY)
+      ctx.strokeStyle = "#e2e8f0"
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.moveTo(contentPadding, tableStartY + 12)
+      ctx.lineTo(contentPadding + statsWidth - 40, tableStartY + 12)
+      ctx.stroke()
+
+      ctx.font = "24px 'Segoe UI', sans-serif"
+      playerStats.forEach((p, idx) => {
+        const y = tableStartY + 40 + idx * 36
+        ctx.fillStyle = "#0f172a"
+        ctx.fillText(p.name, colX[0], y)
+        ctx.fillText(`${p.games}  ${p.wins}/${p.losses}`, colX[1], y)
+        ctx.fillStyle = "#6d28d9"
+        ctx.fillText(`${p.winRate.toFixed(1)}%`, colX[2], y)
+        ctx.fillStyle = p.pointsDiff >= 0 ? "#15803d" : "#dc2626"
+        ctx.fillText(`${p.pointsDiff >= 0 ? "+" : ""}${p.pointsDiff}`, colX[3], y)
+      })
+
+      // Pair rankings card
+      const pairCardX = pairsX
+      const pairCardY = 300
+      const pairCardWidth = pairsWidth
+      const pairCardHeight = 460
+      ctx.fillStyle = "#0f172a"
+      roundRect(pairCardX, pairCardY, pairCardWidth, pairCardHeight, 22)
+      ctx.fill()
+      ctx.fillStyle = "#f8fafc"
+      ctx.font = "28px 'Segoe UI', sans-serif"
+      ctx.fillText("Pair Rankings", pairCardX + 24, pairCardY + 46)
+      ctx.fillStyle = "#cbd5e1"
+      ctx.font = "18px 'Segoe UI', sans-serif"
+      ctx.fillText("Ranked by win rate and games played", pairCardX + 24, pairCardY + 72)
+
+      const pairRowStart = pairCardY + 110
+      const pairRowHeight = 110
+      pairStats.forEach((pair, idx) => {
+        const rowY = pairRowStart + idx * (pairRowHeight + 14)
+        ctx.fillStyle = "#111827"
+        roundRect(pairCardX + 16, rowY, pairCardWidth - 32, pairRowHeight, 14)
+        ctx.fill()
+
+        ctx.fillStyle = "#f8fafc"
+        ctx.font = "20px 'Segoe UI', sans-serif"
+        ctx.fillText(`${pair.names}`, pairCardX + 28, rowY + 32)
+        ctx.fillStyle = "#cbd5e1"
+        ctx.font = "16px 'Segoe UI', sans-serif"
+        ctx.fillText(`${pair.games} games`, pairCardX + 28, rowY + 56)
+
+        ctx.fillStyle = "#fbbf24"
+        ctx.font = "18px 'Segoe UI', sans-serif"
+        ctx.fillText("Win Rate", pairCardX + 28, rowY + 80)
+        ctx.fillStyle = "#f8fafc"
+        ctx.fillText(`${pair.winRate.toFixed(1)}%`, pairCardX + 120, rowY + 80)
+
+        ctx.fillStyle = "#38bdf8"
+        ctx.fillText("Avg Points", pairCardX + pairCardWidth / 2, rowY + 80)
+        ctx.fillStyle = "#f8fafc"
+        ctx.fillText(`${pair.avgPoints}`, pairCardX + pairCardWidth / 2 + 110, rowY + 80)
+      })
+
+      // Games summary
+      const gamesStartY = height - 140
+      ctx.font = "32px 'Segoe UI', sans-serif"
+      ctx.fillStyle = "#0f172a"
+      ctx.fillText("Games", contentPadding, gamesStartY)
+      ctx.font = "24px 'Segoe UI', sans-serif"
+      ctx.fillStyle = "#334155"
+      ctx.fillText(`${completedGames.length} of ${session.games.length} completed`, contentPadding, gamesStartY + 36)
+
+      const dataUrl = canvas.toDataURL("image/png")
+      const link = document.createElement("a")
+      link.href = dataUrl
+      link.download = `badminton-session-${session.date}.png`
+      link.click()
+    } catch (err) {
+      console.error("Failed to generate image", err)
+      alert("Could not generate image. Please try again.")
+    } finally {
+      setIsGeneratingImage(false)
+    }
+  }
+
   const generateRandomPairings = async () => {
     if (!session) return
 
@@ -233,6 +497,7 @@ export default function SessionDetailPage() {
         score1: 0,
         score2: 0,
         completed: false,
+        rotation: nextRotation,
       }
       newGames.push(newGame)
     }
@@ -251,6 +516,7 @@ export default function SessionDetailPage() {
       score1: 0,
       score2: 0,
       completed: false,
+      rotation: nextRotation,
     }
 
     const updatedSession = { ...session, games: [...session.games, newGame] }
@@ -364,13 +630,13 @@ export default function SessionDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 sm:py-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Session - {new Date(session.date).toLocaleDateString()}</h1>
-          <p className="text-muted-foreground text-sm sm:text-base">
-            {session.players.length} players, {session.games.length} games
-          </p>
-        </div>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold">Session - {new Date(session.date).toLocaleDateString()}</h1>
+            <p className="text-muted-foreground text-sm sm:text-base">
+              {session.players.length} players, {session.games.length} games, {rotationCount} rotation{rotationCount === 1 ? "" : "s"}
+            </p>
+          </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Button 
             onClick={shareSession} 
@@ -380,6 +646,15 @@ export default function SessionDetailPage() {
           >
             <Share2 className="mr-2 h-4 w-4" />
             {isSharing ? "Sharing..." : "Share Session"}
+          </Button>
+          <Button
+            onClick={generateShareableImage}
+            variant="outline"
+            className="w-full sm:w-auto"
+            disabled={isGeneratingImage}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {isGeneratingImage ? "Building Image..." : "Share Image"}
           </Button>
           <Button onClick={exportToCSV} variant="outline" className="w-full sm:w-auto">
             <Download className="mr-2 h-4 w-4" />
@@ -411,7 +686,7 @@ export default function SessionDetailPage() {
                         {session.players
                           .filter(pid => ![manualTeam1Player2, manualTeam2Player1, manualTeam2Player2].includes(pid) || pid === manualTeam1Player1)
                           .map((playerId) => {
-                            const count = getGamesPlayedCount(playerId)
+                            const count = getGamesPlayedCount(playerId, nextRotation)
                             return (
                               <SelectItem key={playerId} value={playerId}>
                                 <div className="flex items-center gap-2 w-full">
@@ -431,8 +706,8 @@ export default function SessionDetailPage() {
                         {session.players
                           .filter(pid => ![manualTeam1Player1, manualTeam2Player1, manualTeam2Player2].includes(pid) || pid === manualTeam1Player2)
                           .map((playerId) => {
-                            const count = getGamesPlayedCount(playerId);
-                            const pairCount = manualTeam1Player1 && playerId ? getPairGamesPlayedCount(manualTeam1Player1, playerId) : 0;
+                            const count = getGamesPlayedCount(playerId, nextRotation);
+                            const pairCount = manualTeam1Player1 && playerId ? getPairGamesPlayedCount(manualTeam1Player1, playerId, nextRotation) : 0;
                             return (
                               <SelectItem key={playerId} value={playerId}>
                                 <div className="flex items-center gap-2 w-full">
@@ -462,7 +737,7 @@ export default function SessionDetailPage() {
                         {session.players
                           .filter(pid => ![manualTeam1Player1, manualTeam1Player2, manualTeam2Player2].includes(pid) || pid === manualTeam2Player1)
                           .map((playerId) => {
-                            const count = getGamesPlayedCount(playerId)
+                            const count = getGamesPlayedCount(playerId, nextRotation)
                             return (
                               <SelectItem key={playerId} value={playerId}>
                                 <div className="flex items-center gap-2 w-full">
@@ -482,8 +757,8 @@ export default function SessionDetailPage() {
                         {session.players
                           .filter(pid => ![manualTeam1Player1, manualTeam1Player2, manualTeam2Player1].includes(pid) || pid === manualTeam2Player2)
                           .map((playerId) => {
-                            const count = getGamesPlayedCount(playerId);
-                            const pairCount = manualTeam2Player1 && playerId ? getPairGamesPlayedCount(manualTeam2Player1, playerId) : 0;
+                            const count = getGamesPlayedCount(playerId, nextRotation);
+                            const pairCount = manualTeam2Player1 && playerId ? getPairGamesPlayedCount(manualTeam2Player1, playerId, nextRotation) : 0;
                             return (
                               <SelectItem key={playerId} value={playerId}>
                                 <div className="flex items-center gap-2 w-full">
@@ -525,6 +800,20 @@ export default function SessionDetailPage() {
           </Button>
         </div>
       </div>
+
+      {rotationComplete && (
+        <div className="mb-6">
+          <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-900">
+            <CheckCircle2 className="h-5 w-5 mt-0.5 text-emerald-600" />
+            <div>
+              <p className="font-semibold">Rotation {activeRotation} complete</p>
+              <p className="text-sm text-emerald-800">
+                Everyone has partnered at least once and games are balanced across players. New pairings will start set {nextRotation}.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Share Dialog */}
       <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
@@ -604,9 +893,34 @@ export default function SessionDetailPage() {
             {session.games.length === 0 ? (
               <p className="text-muted-foreground">No games yet. Generate pairings to start playing!</p>
             ) : (
-              <div className="space-y-4"> 
-                {session.games.map((game, index) => (
-                  <div key={game.id} className="border rounded-lg p-4 space-y-2">
+              <div className="space-y-6"> 
+                {gamesByRotation().map(({ rotation, games }) => (
+                  <div key={rotation} className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span
+                          className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm dark:border-blue-900/50 dark:bg-blue-900/30 dark:text-blue-100"
+                        >
+                          Rotation {rotation}
+                        </span>
+                        {rotation === activeRotation && rotationComplete && (
+                          <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800 border border-emerald-200">
+                            Complete
+                          </span>
+                        )}
+                        {rotation === activeRotation && !rotationComplete && (
+                          <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 border border-amber-200">
+                            In progress
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {games.filter((g) => g.completed).length} of {games.length} games completed
+                      </span>
+                    </div>
+                    <div className="space-y-4">
+                      {games.map((game, index) => (
+                        <div key={game.id} className="border rounded-lg p-4 space-y-2">
 <div className="relative">
   {/* Delete (X) button in top-right */}
   <button
@@ -640,6 +954,9 @@ export default function SessionDetailPage() {
                         <p className="font-medium">Team 2</p>
                         <p className="text-sm text-muted-foreground">{getPlayerName(game.team2[0])} & {getPlayerName(game.team2[1])}</p>
                       </div>
+                    </div>
+                  </div>
+                      ))}
                     </div>
                   </div>
                 ))}

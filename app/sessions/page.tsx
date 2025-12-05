@@ -48,12 +48,20 @@ interface Game {
   completed: boolean
 }
 
+interface PlayerGroup {
+  id: string
+  name: string
+  players: string[]
+}
+
 export default function SessionsPage() {
   const router = useRouter()
   const [players, setPlayers] = useState<Player[]>([])
   const [sessions, setSessions] = useState<Session[]>([])
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([])
   const [sessionDate, setSessionDate] = useState(new Date().toISOString().split("T")[0])
+  const [playerGroups, setPlayerGroups] = useState<PlayerGroup[]>([])
+  const [groupName, setGroupName] = useState("")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -87,7 +95,44 @@ export default function SessionsPage() {
 
   useEffect(() => {
     loadData()
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("bb_player_groups")
+      if (stored) {
+        try {
+          setPlayerGroups(JSON.parse(stored))
+        } catch (err) {
+          console.warn("Failed to parse player groups", err)
+        }
+      }
+    }
   }, [])
+
+  const persistGroups = (groups: PlayerGroup[]) => {
+    setPlayerGroups(groups)
+    if (typeof window !== "undefined") {
+      localStorage.setItem("bb_player_groups", JSON.stringify(groups))
+    }
+  }
+
+  const saveCurrentGroup = () => {
+    if (!groupName.trim() || selectedPlayers.length === 0) return
+    const newGroup: PlayerGroup = {
+      id: Date.now().toString(),
+      name: groupName.trim(),
+      players: selectedPlayers,
+    }
+    persistGroups([newGroup, ...playerGroups])
+    setGroupName("")
+  }
+
+  const applyGroup = (group: PlayerGroup) => {
+    setSelectedPlayers(group.players)
+  }
+
+  const removeGroup = (id: string) => {
+    const updated = playerGroups.filter((g) => g.id !== id)
+    persistGroups(updated)
+  }
 
   const togglePlayerSelection = (playerId: string) => {
     setSelectedPlayers((prev) =>
@@ -196,6 +241,57 @@ export default function SessionsPage() {
                               No players available. Add players first.
                             </p>
                           )}
+                          <div className="mt-4 space-y-3 border rounded-lg p-3 bg-slate-50/60 dark:bg-white">
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm font-semibold text-slate-800">Player groups</p>
+                              <span className="text-xs text-slate-500">{playerGroups.length} saved</span>
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <Input
+                                placeholder="Group name"
+                                value={groupName}
+                                onChange={(e) => setGroupName(e.target.value)}
+                              />
+                              <Button
+                                variant="outline"
+                                onClick={saveCurrentGroup}
+                                disabled={!groupName.trim() || selectedPlayers.length === 0}
+                              >
+                                Save selection
+                              </Button>
+                            </div>
+                            {playerGroups.length > 0 ? (
+                              <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
+                                {playerGroups.map((group) => (
+                                  <div
+                                    key={group.id}
+                                    className="flex items-center justify-between rounded-md border px-3 py-2 bg-white"
+                                  >
+                                    <div>
+                                      <p className="text-sm font-medium text-slate-800">{group.name}</p>
+                                      <p className="text-xs text-slate-500">{group.players.length} players</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Button size="sm" variant="secondary" onClick={() => applyGroup(group)}>
+                                        Apply
+                                      </Button>
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        onClick={() => removeGroup(group.id)}
+                                        className="h-8 w-8 text-slate-500"
+                                        aria-label="Remove group"
+                                      >
+                                        ×
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-slate-500">Save your current selection as a preset to reuse later.</p>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <DialogFooter>
