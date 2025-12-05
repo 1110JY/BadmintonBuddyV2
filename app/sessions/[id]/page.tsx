@@ -286,8 +286,9 @@ export default function SessionDetailPage() {
     setIsGeneratingImage(true)
     try {
       const canvas = document.createElement("canvas")
-      const width = 1400
-      const height = 900
+      // WhatsApp-friendly portrait card (simpler, mobile-first)
+      const width = 900
+      const height = 1600
       canvas.width = width
       canvas.height = height
       const ctx = canvas.getContext("2d")
@@ -308,25 +309,14 @@ export default function SessionDetailPage() {
         ctx.closePath()
       }
 
-      // Background
-      const gradient = ctx.createLinearGradient(0, 0, 0, height)
-      gradient.addColorStop(0, "#2563eb")
-      gradient.addColorStop(1, "#7c3aed")
-      ctx.fillStyle = gradient
+      // Background (soft)
+      ctx.fillStyle = "#f8fafc"
       ctx.fillRect(0, 0, width, height)
 
-      // Card
-      ctx.fillStyle = "rgba(248,250,252,0.96)"
-      roundRect(70, 50, width - 140, height - 100, 26)
+      // Card container (clean white, compact)
+      ctx.fillStyle = "#ffffff"
+      roundRect(32, 32, width - 64, height - 64, 24)
       ctx.fill()
-
-      // Header
-      ctx.fillStyle = "#0f172a"
-      ctx.font = "54px 'Segoe UI', sans-serif"
-      ctx.fillText("Badminton Buddy Session", 120, 150)
-      ctx.fillStyle = "#475569"
-      ctx.font = "30px 'Segoe UI', sans-serif"
-      ctx.fillText(new Date(session.date).toLocaleDateString(), 120, 200)
 
       // Completed games only
       const completedGames = session.games.filter((g) => g.completed)
@@ -373,97 +363,103 @@ export default function SessionDetailPage() {
         return { ...p, winRate, avgPoints }
       }).sort((a, b) => b.winRate - a.winRate || b.games - a.games).slice(0, 3)
 
-      // Layout columns
-      const contentPadding = 120
-      const statsWidth = 880
-      const pairsX = contentPadding + statsWidth + 40
-      const pairsWidth = width - pairsX - contentPadding
+      const padding = 64
+      const contentWidth = width - padding * 2
 
-      // Player statistics table
+      // Header area (light card)
+      roundRect(padding, padding, contentWidth, 140, 20)
+      ctx.fillStyle = "#f4f6fb"
+      ctx.fill()
       ctx.fillStyle = "#0f172a"
-      ctx.font = "42px 'Segoe UI', sans-serif"
-      ctx.fillText("Player Statistics", contentPadding, 260)
-      ctx.fillStyle = "#64748b"
+      ctx.font = "40px 'Segoe UI', sans-serif"
+      ctx.fillText("Match Recap", padding + 20, padding + 60)
+      ctx.fillStyle = "#475569"
       ctx.font = "24px 'Segoe UI', sans-serif"
-      ctx.fillText("Performance summary for all players (session)", contentPadding, 296)
+      ctx.fillText(new Date(session.date).toLocaleDateString(), padding + 20, padding + 95)
+      ctx.fillStyle = "#6b7280"
+      ctx.font = "20px 'Segoe UI', sans-serif"
+      ctx.fillText(`${completedGames.length} of ${session.games.length} games completed`, padding + 20, padding + 124)
 
-      const tableStartY = 340
-      const colX = [contentPadding, contentPadding + 280, contentPadding + 470, contentPadding + 650]
+      // Player statistics block (single column)
+      const statsY = padding + 180
       ctx.fillStyle = "#0f172a"
-      ctx.font = "22px 'Segoe UI', sans-serif"
+      ctx.font = "30px 'Segoe UI', sans-serif"
+      ctx.fillText("Player Statistics", padding, statsY)
+      ctx.fillStyle = "#6b7280"
+      ctx.font = "20px 'Segoe UI', sans-serif"
+      ctx.fillText("Performance summary for all players", padding, statsY + 30)
+
+      const tableStartY = statsY + 54
+      const colX = [padding, padding + 220, padding + 420]
+      ctx.fillStyle = "#0f172a"
+      ctx.font = "20px 'Segoe UI', sans-serif"
       ctx.fillText("Player", colX[0], tableStartY)
-      ctx.fillText("Games W/L", colX[1], tableStartY)
+      ctx.fillText("W/L", colX[1], tableStartY)
       ctx.fillText("Win Rate", colX[2], tableStartY)
-      ctx.fillText("Points Diff", colX[3], tableStartY)
-      ctx.strokeStyle = "#e2e8f0"
+      ctx.strokeStyle = "#e5e7eb"
       ctx.lineWidth = 1
       ctx.beginPath()
-      ctx.moveTo(contentPadding, tableStartY + 12)
-      ctx.lineTo(contentPadding + statsWidth - 40, tableStartY + 12)
+      ctx.moveTo(padding, tableStartY + 10)
+      ctx.lineTo(padding + contentWidth, tableStartY + 10)
       ctx.stroke()
 
-      ctx.font = "24px 'Segoe UI', sans-serif"
-      playerStats.forEach((p, idx) => {
-        const y = tableStartY + 40 + idx * 36
+      ctx.font = "20px 'Segoe UI', sans-serif"
+      playerStats.slice(0, 10).forEach((p, idx) => {
+        const y = tableStartY + 36 + idx * 34
         ctx.fillStyle = "#0f172a"
         ctx.fillText(p.name, colX[0], y)
-        ctx.fillText(`${p.games}  ${p.wins}/${p.losses}`, colX[1], y)
-        ctx.fillStyle = "#6d28d9"
+        ctx.fillText(`${p.wins}/${p.losses}`, colX[1], y)
+        ctx.fillStyle = "#2563eb"
         ctx.fillText(`${p.winRate.toFixed(1)}%`, colX[2], y)
-        ctx.fillStyle = p.pointsDiff >= 0 ? "#15803d" : "#dc2626"
-        ctx.fillText(`${p.pointsDiff >= 0 ? "+" : ""}${p.pointsDiff}`, colX[3], y)
       })
 
-      // Pair rankings card
-      const pairCardX = pairsX
-      const pairCardY = 300
-      const pairCardWidth = pairsWidth
-      const pairCardHeight = 460
+      // Pair rankings block (stacked light cards)
+      const pairsY = tableStartY + 36 + Math.min(playerStats.length, 10) * 34 + 32
       ctx.fillStyle = "#0f172a"
-      roundRect(pairCardX, pairCardY, pairCardWidth, pairCardHeight, 22)
-      ctx.fill()
-      ctx.fillStyle = "#f8fafc"
-      ctx.font = "28px 'Segoe UI', sans-serif"
-      ctx.fillText("Pair Rankings", pairCardX + 24, pairCardY + 46)
-      ctx.fillStyle = "#cbd5e1"
+      ctx.font = "26px 'Segoe UI', sans-serif"
+      ctx.fillText("Top Pairs", padding, pairsY)
+      ctx.fillStyle = "#6b7280"
       ctx.font = "18px 'Segoe UI', sans-serif"
-      ctx.fillText("Ranked by win rate and games played", pairCardX + 24, pairCardY + 72)
+      ctx.fillText("Win rate + games played", padding, pairsY + 26)
 
-      const pairRowStart = pairCardY + 110
-      const pairRowHeight = 110
-      pairStats.forEach((pair, idx) => {
-        const rowY = pairRowStart + idx * (pairRowHeight + 14)
-        ctx.fillStyle = "#111827"
-        roundRect(pairCardX + 16, rowY, pairCardWidth - 32, pairRowHeight, 14)
-        ctx.fill()
-
-        ctx.fillStyle = "#f8fafc"
-        ctx.font = "20px 'Segoe UI', sans-serif"
-        ctx.fillText(`${pair.names}`, pairCardX + 28, rowY + 32)
-        ctx.fillStyle = "#cbd5e1"
-        ctx.font = "16px 'Segoe UI', sans-serif"
-        ctx.fillText(`${pair.games} games`, pairCardX + 28, rowY + 56)
-
-        ctx.fillStyle = "#fbbf24"
+      const pairCardWidth = contentWidth
+      const pairRowStart = pairsY + 46
+      const pairRowHeight = 90
+      if (pairStats.length === 0) {
+        ctx.fillStyle = "#6b7280"
         ctx.font = "18px 'Segoe UI', sans-serif"
-        ctx.fillText("Win Rate", pairCardX + 28, rowY + 80)
-        ctx.fillStyle = "#f8fafc"
-        ctx.fillText(`${pair.winRate.toFixed(1)}%`, pairCardX + 120, rowY + 80)
+        ctx.fillText("No completed games yet", padding, pairRowStart + 24)
+      } else {
+        pairStats.forEach((pair, idx) => {
+          const rowY = pairRowStart + idx * (pairRowHeight + 12)
+          roundRect(padding, rowY, pairCardWidth, pairRowHeight, 14)
+          ctx.fillStyle = "#f7f8fb"
+          ctx.fill()
 
-        ctx.fillStyle = "#38bdf8"
-        ctx.fillText("Avg Points", pairCardX + pairCardWidth / 2, rowY + 80)
-        ctx.fillStyle = "#f8fafc"
-        ctx.fillText(`${pair.avgPoints}`, pairCardX + pairCardWidth / 2 + 110, rowY + 80)
-      })
+          ctx.fillStyle = "#0f172a"
+          ctx.font = "20px 'Segoe UI', sans-serif"
+          ctx.fillText(`${pair.names}`, padding + 16, rowY + 28)
+          ctx.fillStyle = "#6b7280"
+          ctx.font = "16px 'Segoe UI', sans-serif"
+          ctx.fillText(`${pair.games} games`, padding + 16, rowY + 52)
 
-      // Games summary
-      const gamesStartY = height - 140
-      ctx.font = "32px 'Segoe UI', sans-serif"
+          ctx.fillStyle = "#2563eb"
+          ctx.font = "18px 'Segoe UI', sans-serif"
+          ctx.fillText(`${pair.winRate.toFixed(1)}%`, padding + pairCardWidth - 140, rowY + 30)
+          ctx.fillStyle = "#6b7280"
+          ctx.font = "16px 'Segoe UI', sans-serif"
+          ctx.fillText(`Avg ${pair.avgPoints}`, padding + pairCardWidth - 140, rowY + 54)
+        })
+      }
+
+      // Games summary footer (compact)
+      const footerY = height - 140
       ctx.fillStyle = "#0f172a"
-      ctx.fillText("Games", contentPadding, gamesStartY)
-      ctx.font = "24px 'Segoe UI', sans-serif"
-      ctx.fillStyle = "#334155"
-      ctx.fillText(`${completedGames.length} of ${session.games.length} completed`, contentPadding, gamesStartY + 36)
+      ctx.font = "26px 'Segoe UI', sans-serif"
+      ctx.fillText("Games", padding, footerY)
+      ctx.fillStyle = "#475569"
+      ctx.font = "20px 'Segoe UI', sans-serif"
+      ctx.fillText(`${completedGames.length} of ${session.games.length} completed`, padding, footerY + 30)
 
       const dataUrl = canvas.toDataURL("image/png")
       const link = document.createElement("a")
