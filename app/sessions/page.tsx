@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -48,6 +49,7 @@ interface Game {
 }
 
 export default function SessionsPage() {
+  const router = useRouter()
   const [players, setPlayers] = useState<Player[]>([])
   const [sessions, setSessions] = useState<Session[]>([])
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([])
@@ -104,6 +106,7 @@ export default function SessionsPage() {
         setSessions(prev => [newSession, ...prev])
         setSelectedPlayers([])
         setIsCreateDialogOpen(false)
+        router.push(`/sessions/${newSession.id}`)
         setError(null)
       } catch (err) {
         setError('Failed to create session')
