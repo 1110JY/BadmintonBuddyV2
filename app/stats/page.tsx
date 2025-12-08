@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select"
 import {
   Trophy, Target, Users, Calendar, Download, Handshake,
-  BarChart3, Award, TrendingUp, Medal, Crown, Star
+  BarChart3, Award, TrendingUp, Medal, Crown, Star, Copy
 } from "lucide-react"
 import { FadeIn } from "@/components/animated/fade-in"
 import { AnimatedCard } from "@/components/animated/animated-card"
@@ -49,6 +49,13 @@ function StatsPageContent() {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [copyingTarget, setCopyingTarget] = useState<string | null>(null)
+  const statsCardRef = useRef<HTMLDivElement | null>(null)
+  const statsCopyButtonRef = useRef<HTMLButtonElement | null>(null)
+  const playerRankingsCardRef = useRef<HTMLDivElement | null>(null)
+  const playerRankingsCopyButtonRef = useRef<HTMLButtonElement | null>(null)
+  const pairRankingsCardRef = useRef<HTMLDivElement | null>(null)
+  const pairRankingsCopyButtonRef = useRef<HTMLButtonElement | null>(null)
 
   const loadData = async () => {
     try {
@@ -197,6 +204,56 @@ function StatsPageContent() {
     }
 
     setTopPair(bestPair)
+  }
+
+  const copyCardToClipboard = async (
+    cardRef: React.RefObject<HTMLDivElement>,
+    buttonRef: React.RefObject<HTMLButtonElement>,
+    filename: string
+  ) => {
+    if (!cardRef.current) return
+    setCopyingTarget(filename)
+    let prevVisibility: string | undefined
+    try {
+      const copyButton = buttonRef.current
+      prevVisibility = copyButton?.style.visibility
+      if (copyButton) copyButton.style.visibility = "hidden"
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)))
+
+      const html2canvas = (await import("html2canvas")).default
+      const canvas = await html2canvas(cardRef.current, {
+        scale: 2,
+        backgroundColor: null,
+        useCORS: true,
+      })
+      const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"))
+      if (!blob) throw new Error("Failed to create image")
+
+      const clipboardSupported = typeof navigator !== "undefined"
+        && "clipboard" in navigator
+        && typeof (navigator.clipboard as any).write === "function"
+        && typeof ClipboardItem !== "undefined"
+
+      if (clipboardSupported) {
+        await (navigator.clipboard as any).write([new ClipboardItem({ "image/png": blob })])
+      } else {
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement("a")
+        link.href = url
+        link.download = `${filename}.png`
+        link.click()
+        URL.revokeObjectURL(url)
+      }
+    } catch (err) {
+      console.error("Failed to copy stats image:", err)
+      alert("Could not copy stats image. Please try again.")
+    } finally {
+      const copyButton = buttonRef.current
+      if (copyButton) {
+        copyButton.style.visibility = prevVisibility || ""
+      }
+      setCopyingTarget(null)
+    }
   }
 
   const exportStatsToCSV = () => {
@@ -401,18 +458,37 @@ function StatsPageContent() {
 
         {/* Player Statistics Table */}
         <FadeIn delay={1.0}>
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300 dark:bg-white/95 dark:shadow-white/30 mb-8">
+          <Card
+            ref={statsCardRef}
+            className="bg-white border border-slate-200 shadow-xl hover:shadow-2xl transition-all duration-300 dark:bg-white/95 dark:border-slate-200/60 dark:shadow-white/30 mb-8"
+          >
             <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-purple-500 rounded-lg flex items-center justify-center shadow-lg dark:shadow-purple-500/20">
-                  <BarChart3 className="h-5 w-5 text-white" />
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-purple-500 rounded-lg flex items-center justify-center shadow-lg dark:shadow-purple-500/20">
+                    <BarChart3 className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-slate-800 dark:text-slate-900">Player Statistics</CardTitle>
+                    <CardDescription className="text-slate-600 dark:text-slate-700">
+                      Performance summary for all players ({selectedSessionId ? "session" : (timeFilter === "all" ? "all time" : timeFilter)})
+                    </CardDescription>
+                  </div>
                 </div>
-                <div>
-                  <CardTitle className="text-slate-800 dark:text-slate-900">Player Statistics</CardTitle>
-                  <CardDescription className="text-slate-600 dark:text-slate-700">
-                    Performance summary for all players ({selectedSessionId ? "session" : (timeFilter === "all" ? "all time" : timeFilter)})
-                  </CardDescription>
-                </div>
+                {playerStats.length > 0 && (
+                  <Button
+                    ref={statsCopyButtonRef}
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => copyCardToClipboard(statsCardRef, statsCopyButtonRef, "player-stats")}
+                    disabled={!!copyingTarget}
+                    className="text-purple-600 hover:text-purple-700"
+                    aria-label="Copy stats image"
+                    title="Copy stats image"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -458,18 +534,37 @@ function StatsPageContent() {
 
         {/* Player Rankings */}
         <FadeIn delay={1.2}>
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300 dark:bg-white/95 dark:shadow-white/30 mb-8">
+          <Card
+            ref={playerRankingsCardRef}
+            className="bg-white border border-slate-200 shadow-xl hover:shadow-2xl transition-all duration-300 dark:bg-white/95 dark:border-slate-200/60 dark:shadow-white/30 mb-8"
+          >
             <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-emerald-500 rounded-lg flex items-center justify-center shadow-lg dark:shadow-emerald-500/20">
-                  <Award className="h-5 w-5 text-white" />
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-emerald-500 rounded-lg flex items-center justify-center shadow-lg dark:shadow-emerald-500/20">
+                    <Award className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-slate-800 dark:text-slate-900">Player Rankings</CardTitle>
+                    <CardDescription className="text-slate-600 dark:text-slate-700">
+                      Ranked by win rate and games played ({selectedSessionId ? "session" : (timeFilter === "all" ? "all time" : timeFilter)})
+                    </CardDescription>
+                  </div>
                 </div>
-                <div>
-                  <CardTitle className="text-slate-800 dark:text-slate-900">Player Rankings</CardTitle>
-                  <CardDescription className="text-slate-600 dark:text-slate-700">
-                    Ranked by win rate and games played ({selectedSessionId ? "session" : (timeFilter === "all" ? "all time" : timeFilter)})
-                  </CardDescription>
-                </div>
+                {playerStats.length > 0 && (
+                  <Button
+                    ref={playerRankingsCopyButtonRef}
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => copyCardToClipboard(playerRankingsCardRef, playerRankingsCopyButtonRef, "player-rankings")}
+                    disabled={!!copyingTarget}
+                    className="text-purple-600 hover:text-purple-700"
+                    aria-label="Copy rankings image"
+                    title="Copy rankings image"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -535,18 +630,37 @@ function StatsPageContent() {
 
         {/* Pair Rankings */}
         <FadeIn delay={1.4}>
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300 dark:bg-white/95 dark:shadow-white/30">
+          <Card
+            ref={pairRankingsCardRef}
+            className="bg-white border border-slate-200 shadow-xl hover:shadow-2xl transition-all duration-300 dark:bg-white/95 dark:border-slate-200/60 dark:shadow-white/30"
+          >
             <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-blue-500 rounded-lg flex items-center justify-center shadow-lg dark:shadow-blue-500/20">
-                  <Handshake className="h-5 w-5 text-white" />
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-blue-500 rounded-lg flex items-center justify-center shadow-lg dark:shadow-blue-500/20">
+                    <Handshake className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-slate-800 dark:text-slate-900">Pair Rankings</CardTitle>
+                    <CardDescription className="text-slate-600 dark:text-slate-700">
+                      Ranked by win rate and games played ({selectedSessionId ? "session" : (timeFilter === "all" ? "all time" : timeFilter)})
+                    </CardDescription>
+                  </div>
                 </div>
-                <div>
-                  <CardTitle className="text-slate-800 dark:text-slate-900">Pair Rankings</CardTitle>
-                  <CardDescription className="text-slate-600 dark:text-slate-700">
-                    Ranked by win rate and games played ({selectedSessionId ? "session" : (timeFilter === "all" ? "all time" : timeFilter)})
-                  </CardDescription>
-                </div>
+                {pairStatsSorted.length > 0 && (
+                  <Button
+                    ref={pairRankingsCopyButtonRef}
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => copyCardToClipboard(pairRankingsCardRef, pairRankingsCopyButtonRef, "pair-rankings")}
+                    disabled={!!copyingTarget}
+                    className="text-purple-600 hover:text-purple-700"
+                    aria-label="Copy pair rankings image"
+                    title="Copy pair rankings image"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent>
