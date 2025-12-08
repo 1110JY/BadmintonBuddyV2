@@ -67,7 +67,7 @@ export default function SessionDetailPage() {
   const [isManualPairingOpen, setIsManualPairingOpen] = useState(false)
   const [manualTeam1Player1, setManualTeam1Player1] = useState("")
   const [manualTeam1Player2, setManualTeam1Player2] = useState("")
-  const [manualTeam2Player1, setManualTeam2Player1] = useState("")
+const [manualTeam2Player1, setManualTeam2Player1] = useState("")
   const [manualTeam2Player2, setManualTeam2Player2] = useState("")
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
   const [gameToDelete, setGameToDelete] = useState<string | null>(null)
@@ -75,6 +75,15 @@ export default function SessionDetailPage() {
   const [isSharing, setIsSharing] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
+  const [pendingLiveGame, setPendingLiveGame] = useState<Game | null>(null)
+  const [isLiveTargetDialogOpen, setIsLiveTargetDialogOpen] = useState(false)
+  const [liveTargetInput, setLiveTargetInput] = useState("21")
+  const [liveGame, setLiveGame] = useState<Game | null>(null)
+  const [liveScore1, setLiveScore1] = useState(0)
+  const [liveScore2, setLiveScore2] = useState(0)
+  const [liveTarget, setLiveTarget] = useState(21)
+  const [liveHistory, setLiveHistory] = useState<Array<"team1" | "team2">>([])
+  const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -206,6 +215,91 @@ export default function SessionDetailPage() {
       console.error('Error saving session:', err)
       setError('Failed to save session')
     }
+  }
+
+  const startLiveScoring = (game: Game) => {
+    setPendingLiveGame(game)
+    setLiveTargetInput(Math.max(game.score1, game.score2, 21).toString())
+    setIsLiveTargetDialogOpen(true)
+  }
+
+  const confirmLiveTarget = () => {
+    if (!pendingLiveGame) return
+    const target = Number.parseInt(liveTargetInput) || 21
+    setLiveTarget(target)
+    setLiveGame(pendingLiveGame)
+    setLiveScore1(pendingLiveGame.score1)
+    setLiveScore2(pendingLiveGame.score2)
+    setLiveHistory([])
+    setIsLiveTargetDialogOpen(false)
+  }
+
+  const clearLiveState = () => {
+    setPendingLiveGame(null)
+    setLiveGame(null)
+    setLiveHistory([])
+    setIsLiveTargetDialogOpen(false)
+    setIsEndConfirmOpen(false)
+  }
+
+  const persistLiveScores = async (gameId: string, score1: number, score2: number, completed: boolean) => {
+    if (!session) return
+    const updatedGames = session.games.map((g) =>
+      g.id === gameId ? { ...g, score1, score2, completed } : g
+    )
+    const updatedSession = { ...session, games: updatedGames }
+    await saveSession(updatedSession)
+  }
+
+  const adjustScore = async (team: "team1" | "team2", delta: 1 | -1) => {
+    if (!liveGame) return
+    let next1 = liveScore1
+    let next2 = liveScore2
+    if (team === "team1") {
+      next1 = Math.max(0, liveScore1 + delta)
+    } else {
+      next2 = Math.max(0, liveScore2 + delta)
+    }
+    // Prevent exceeding target
+    if (next1 > liveTarget || next2 > liveTarget) return
+
+    setLiveScore1(next1)
+    setLiveScore2(next2)
+    if (delta === 1) setLiveHistory((h) => [...h, team])
+    await persistLiveScores(liveGame.id, next1, next2, false)
+
+    if (next1 === liveTarget || next2 === liveTarget) {
+      setIsEndConfirmOpen(true)
+    }
+  }
+
+  const undoLastPoint = async () => {
+    if (!liveGame || liveHistory.length === 0) return
+    const last = liveHistory[liveHistory.length - 1]
+    if (last === "team1") {
+      const next = Math.max(0, liveScore1 - 1)
+      setLiveScore1(next)
+      setLiveHistory((h) => h.slice(0, -1))
+      await persistLiveScores(liveGame.id, next, liveScore2, false)
+    } else {
+      const next = Math.max(0, liveScore2 - 1)
+      setLiveScore2(next)
+      setLiveHistory((h) => h.slice(0, -1))
+      await persistLiveScores(liveGame.id, liveScore1, next, false)
+    }
+    setIsEndConfirmOpen(false)
+  }
+
+  const finishLiveMatch = async () => {
+    if (!liveGame) return
+    const final1 = liveScore1
+    const final2 = liveScore2
+    await persistLiveScores(liveGame.id, final1, final2, true)
+    clearLiveState()
+  }
+
+  const cancelLiveScoring = () => {
+    clearLiveState()
   }
 
   const shareSession = async () => {
@@ -654,23 +748,14 @@ export default function SessionDetailPage() {
             <Share2 className="mr-2 h-4 w-4" />
             {isSharing ? "Sharing..." : "Share Session"}
           </Button>
-          <Button
-            onClick={generateShareableImage}
-            variant="outline"
-            className="w-full sm:w-auto"
-            disabled={isGeneratingImage}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            {isGeneratingImage ? "Building Image..." : "Share Image"}
-          </Button>
-          <Button onClick={exportToCSV} variant="outline" className="w-full sm:w-auto">
-            <Download className="mr-2 h-4 w-4" />
-            Export CSV
-          </Button>
-          <Button onClick={generateRandomPairings} className="w-full sm:w-auto">
-            <Shuffle className="mr-2 h-4 w-4" />
-            Generate Pairings
-          </Button>
+        <Button onClick={exportToCSV} variant="outline" className="w-full sm:w-auto">
+          <Download className="mr-2 h-4 w-4" />
+          Export CSV
+        </Button>
+        <Button onClick={generateRandomPairings} className="w-full sm:w-auto">
+          <Shuffle className="mr-2 h-4 w-4" />
+          Generate Pairings
+        </Button>
           <Dialog open={isManualPairingOpen} onOpenChange={setIsManualPairingOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="w-full sm:w-auto">
@@ -941,9 +1026,14 @@ export default function SessionDetailPage() {
   {/* Game number and Edit/Add Score button */}
   <div className="flex justify-between items-center mb-2 pr-8">
     <h4 className="font-semibold">Game {index + 1}</h4>
-    <Button size="sm" variant="outline" onClick={() => startEditScore(game)}>
-      {game.completed ? "Edit Score" : "Add Score"}
-    </Button>
+    <div className="flex gap-2">
+      <Button size="sm" variant="outline" onClick={() => startLiveScoring(game)}>
+        Score Live
+      </Button>
+      <Button size="sm" variant="outline" onClick={() => startEditScore(game)}>
+        {game.completed ? "Edit Score" : "Add Score"}
+      </Button>
+    </div>
   </div>
 </div>
 
@@ -1023,9 +1113,136 @@ export default function SessionDetailPage() {
             <Button variant="destructive" onClick={deleteGame}>
               Delete
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Live scoring target selection */}
+        <Dialog open={isLiveTargetDialogOpen} onOpenChange={setIsLiveTargetDialogOpen}>
+          <DialogContent className="w-[92vw] max-w-[500px] sm:max-w-md rounded-2xl">
+            <DialogHeader>
+              <DialogTitle>Start Live Scoring</DialogTitle>
+              <DialogDescription>
+                Choose a target score for this match.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="flex flex-wrap gap-2">
+                {[15, 21].map((val) => (
+                  <Button
+                    key={val}
+                    variant={liveTargetInput === val.toString() ? "default" : "outline"}
+                    onClick={() => setLiveTargetInput(val.toString())}
+                    className="flex-1"
+                  >
+                    {val}
+                  </Button>
+                ))}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="customTarget">Custom target</Label>
+                <Input
+                  id="customTarget"
+                  type="number"
+                  min="1"
+                  value={liveTargetInput}
+                  onChange={(e) => setLiveTargetInput(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsLiveTargetDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={confirmLiveTarget}>Start</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* End match confirm */}
+        <Dialog open={isEndConfirmOpen} onOpenChange={setIsEndConfirmOpen}>
+          <DialogContent className="w-[92vw] max-w-[480px] sm:max-w-md rounded-2xl">
+            <DialogHeader>
+              <DialogTitle>End match and save?</DialogTitle>
+              <DialogDescription>
+                Team 1: {liveScore1} — Team 2: {liveScore2}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEndConfirmOpen(false)}>
+                Keep Scoring
+              </Button>
+              <Button onClick={finishLiveMatch}>Save Final Score</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Live scoring panel */}
+        <Dialog open={!!liveGame} onOpenChange={(open) => { if (!open) cancelLiveScoring() }}>
+          <DialogContent className="w-[92vw] max-w-[620px] sm:max-w-xl rounded-2xl">
+            <DialogHeader>
+              <div className="flex justify-between items-start gap-3">
+                <div className="space-y-1">
+                  <DialogTitle className="text-purple-700">Live Scoring</DialogTitle>
+                  {liveGame && (
+                    <DialogDescription className="leading-relaxed">
+                      <div>Game {(session?.games.findIndex((g) => g.id === liveGame.id) ?? 0) + 1}</div>
+                      <div>Target {liveTarget}</div>
+                      <div>
+                        {getPlayerName(liveGame.team1[0])} &amp; {getPlayerName(liveGame.team1[1])} vs {getPlayerName(liveGame.team2[0])} &amp; {getPlayerName(liveGame.team2[1])}
+                      </div>
+                    </DialogDescription>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={undoLastPoint} disabled={liveHistory.length === 0}>
+                    Undo
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={cancelLiveScoring}>
+                    Cancel Live
+                  </Button>
+                </div>
+              </div>
+            </DialogHeader>
+            <CardContent className="p-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                <div className="flex flex-col items-center gap-3 p-4 rounded-lg bg-purple-50">
+                  <p className="text-sm font-medium text-purple-700">Team 1</p>
+                  <p className="text-4xl font-bold text-purple-900">{liveScore1}</p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => adjustScore("team1", -1)} disabled={liveScore1 === 0}>
+                      -1
+                    </Button>
+                    <Button onClick={() => adjustScore("team1", 1)} disabled={liveScore1 >= liveTarget}>
+                      +1
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex flex-col items-center gap-3 p-4 rounded-lg bg-purple-50">
+                  <p className="text-sm font-medium text-purple-700">Team 2</p>
+                  <p className="text-4xl font-bold text-purple-900">{liveScore2}</p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => adjustScore("team2", -1)} disabled={liveScore2 === 0}>
+                      -1
+                    </Button>
+                    <Button onClick={() => adjustScore("team2", 1)} disabled={liveScore2 >= liveTarget}>
+                      +1
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+            <DialogFooter className="mt-2">
+              <Button
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                onClick={() => setIsEndConfirmOpen(true)}
+                disabled={liveScore1 < liveTarget && liveScore2 < liveTarget}
+              >
+                End match and save
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
       <div className="mt-10 flex justify-center">
         <Link href={`/stats?sessionId=${sessionId}`}>

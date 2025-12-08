@@ -1,5 +1,6 @@
 "use client"
 
+import type React from "react"
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui/select"
 import {
   Trophy, Target, Users, Calendar, Download, Handshake,
-  BarChart3, Award, TrendingUp, Medal, Crown, Star, Copy
+  BarChart3, Award, Medal, Crown, Star, Copy
 } from "lucide-react"
 import { FadeIn } from "@/components/animated/fade-in"
 import { AnimatedCard } from "@/components/animated/animated-card"
@@ -469,7 +470,7 @@ function StatsPageContent() {
                     <BarChart3 className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-slate-800 dark:text-slate-900">Player Statistics</CardTitle>
+                    <CardTitle className="text-slate-800 dark:text-slate-900 mb-1">Player Statistics</CardTitle>
                     <CardDescription className="text-slate-600 dark:text-slate-700">
                       Performance summary for all players ({selectedSessionId ? "session" : (timeFilter === "all" ? "all time" : timeFilter)})
                     </CardDescription>
@@ -545,7 +546,7 @@ function StatsPageContent() {
                     <Award className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-slate-800 dark:text-slate-900">Player Rankings</CardTitle>
+                    <CardTitle className="text-slate-800 dark:text-slate-900 mb-1">Player Rankings</CardTitle>
                     <CardDescription className="text-slate-600 dark:text-slate-700">
                       Ranked by win rate and games played ({selectedSessionId ? "session" : (timeFilter === "all" ? "all time" : timeFilter)})
                     </CardDescription>
@@ -641,7 +642,7 @@ function StatsPageContent() {
                     <Handshake className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-slate-800 dark:text-slate-900">Pair Rankings</CardTitle>
+                    <CardTitle className="text-slate-800 dark:text-slate-900 mb-1">Pair Rankings</CardTitle>
                     <CardDescription className="text-slate-600 dark:text-slate-700">
                       Ranked by win rate and games played ({selectedSessionId ? "session" : (timeFilter === "all" ? "all time" : timeFilter)})
                     </CardDescription>
