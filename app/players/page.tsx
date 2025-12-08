@@ -157,7 +157,7 @@ export default function PlayersPage() {
                         </Button>
                       </motion.div>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-md w-full dark:bg-white/95 dark:shadow-white/30">
+                    <DialogContent className="w-[92vw] max-w-[560px] sm:max-w-md rounded-2xl dark:bg-white/95 dark:shadow-white/30">
                       <DialogHeader>
                         <DialogTitle className="dark:text-slate-900">Add New Player</DialogTitle>
                         <DialogDescription className="dark:text-slate-700">Enter the name of the new player to add to your club.</DialogDescription>
@@ -408,7 +408,7 @@ export default function PlayersPage() {
       </div>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-md w-full dark:bg-white/95 dark:shadow-white/30">
+        <DialogContent className="w-[92vw] max-w-[520px] sm:max-w-md rounded-2xl dark:bg-white/95 dark:shadow-white/30">
           <DialogHeader>
             <DialogTitle className="dark:text-slate-900">Edit Player</DialogTitle>
             <DialogDescription className="dark:text-slate-700">Update the player's name.</DialogDescription>

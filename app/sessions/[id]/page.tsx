@@ -678,7 +678,7 @@ export default function SessionDetailPage() {
                 Manual Pairing
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="w-[92vw] max-w-[560px] sm:max-w-xl rounded-2xl">
               <DialogHeader>
                 <DialogTitle>Create Manual Pairing</DialogTitle>
                 <DialogDescription>Select players for each team manually.</DialogDescription>
@@ -824,7 +824,7 @@ export default function SessionDetailPage() {
 
       {/* Share Dialog */}
       <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[92vw] max-w-[520px] sm:max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Share2 className="h-5 w-5" />
@@ -974,7 +974,7 @@ export default function SessionDetailPage() {
       </div>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="w-[92vw] max-w-[520px] sm:max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle>Edit Game Score</DialogTitle>
             <DialogDescription>Enter the final scores for this game.</DialogDescription>
@@ -1009,7 +1009,7 @@ export default function SessionDetailPage() {
       </Dialog>
 
       <Dialog open={!!gameToDelete} onOpenChange={(open) => !open && setGameToDelete(null)}>
-        <DialogContent>
+        <DialogContent className="w-[92vw] max-w-[520px] sm:max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle>Delete game?</DialogTitle>
             <DialogDescription>
