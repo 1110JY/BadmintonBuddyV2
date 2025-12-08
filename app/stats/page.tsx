@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -37,7 +37,7 @@ interface PairStats {
   pair: [string, string]; gamesPlayed: number; gamesWon: number; totalPoints: number; averagePoints: number
 }
 
-export default function StatsPage() {
+function StatsPageContent() {
   const searchParams = useSearchParams()
   const initializedFromQuery = useRef(false)
   const [players, setPlayers] = useState<Player[]>([])
@@ -612,5 +612,13 @@ export default function StatsPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function StatsPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center text-slate-600">Loading stats...</div>}>
+      <StatsPageContent />
+    </Suspense>
   )
 }
