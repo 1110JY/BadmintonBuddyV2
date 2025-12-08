@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import { useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
@@ -37,6 +38,8 @@ interface PairStats {
 }
 
 export default function StatsPage() {
+  const searchParams = useSearchParams()
+  const initializedFromQuery = useRef(false)
   const [players, setPlayers] = useState<Player[]>([])
   const [sessions, setSessions] = useState<Session[]>([])
   const [playerStats, setPlayerStats] = useState<PlayerStats[]>([])
@@ -76,6 +79,16 @@ export default function StatsPage() {
   useEffect(() => {
     loadData()
   }, [])
+
+  useEffect(() => {
+    if (initializedFromQuery.current) return
+    const sessionIdFromQuery = searchParams.get("sessionId")
+    if (sessionIdFromQuery && sessions.some(s => s.id === sessionIdFromQuery)) {
+      setSelectedSessionId(sessionIdFromQuery)
+      setTimeFilter("all")
+      initializedFromQuery.current = true
+    }
+  }, [sessions, searchParams])
 
   useEffect(() => {
     if (players.length && sessions.length) calculateStats()

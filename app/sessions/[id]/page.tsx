@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -69,6 +70,7 @@ export default function SessionDetailPage() {
   const [manualTeam2Player1, setManualTeam2Player1] = useState("")
   const [manualTeam2Player2, setManualTeam2Player2] = useState("")
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
+  const [gameToDelete, setGameToDelete] = useState<string | null>(null)
   const [shareLink, setShareLink] = useState("")
   const [isSharing, setIsSharing] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
@@ -339,7 +341,11 @@ export default function SessionDetailPage() {
         const games = wins + losses
         const winRate = games > 0 ? Math.round((wins / games) * 1000) / 10 : 0
         return { id: pid, name: getPlayerName(pid), wins, losses, games, winRate, pointsDiff }
-      }).sort((a, b) => b.winRate - a.winRate || b.games - a.games)
+      }).sort((a, b) => {
+        if (b.winRate !== a.winRate) return b.winRate - a.winRate
+        if (b.pointsDiff !== a.pointsDiff) return b.pointsDiff - a.pointsDiff
+        return b.games - a.games
+      })
 
       // Pair stats (top 3 by win rate/games)
       const pairMap: Record<string, { wins: number; games: number; points: number; names: string }> = {}
@@ -552,12 +558,17 @@ export default function SessionDetailPage() {
     setEditingGame(null)
   }
 
-  const deleteGame = async (gameId: string) => {
-    if (!session) return
+  const requestDeleteGame = (gameId: string) => {
+    setGameToDelete(gameId)
+  }
 
-    const updatedGames = session.games.filter((game) => game.id !== gameId)
+  const deleteGame = async () => {
+    if (!session) return
+    if (!gameToDelete) return
+    const updatedGames = session.games.filter((game) => game.id !== gameToDelete)
     const updatedSession = { ...session, games: updatedGames }
     await saveSession(updatedSession)
+    setGameToDelete(null)
   }
 
   const deleteSession = async () => {
@@ -682,7 +693,7 @@ export default function SessionDetailPage() {
                         {session.players
                           .filter(pid => ![manualTeam1Player2, manualTeam2Player1, manualTeam2Player2].includes(pid) || pid === manualTeam1Player1)
                           .map((playerId) => {
-                            const count = getGamesPlayedCount(playerId, nextRotation)
+                            const count = getGamesPlayedCount(playerId)
                             return (
                               <SelectItem key={playerId} value={playerId}>
                                 <div className="flex items-center gap-2 w-full">
@@ -702,8 +713,8 @@ export default function SessionDetailPage() {
                         {session.players
                           .filter(pid => ![manualTeam1Player1, manualTeam2Player1, manualTeam2Player2].includes(pid) || pid === manualTeam1Player2)
                           .map((playerId) => {
-                            const count = getGamesPlayedCount(playerId, nextRotation);
-                            const pairCount = manualTeam1Player1 && playerId ? getPairGamesPlayedCount(manualTeam1Player1, playerId, nextRotation) : 0;
+                            const count = getGamesPlayedCount(playerId);
+                            const pairCount = manualTeam1Player1 && playerId ? getPairGamesPlayedCount(manualTeam1Player1, playerId) : 0;
                             return (
                               <SelectItem key={playerId} value={playerId}>
                                 <div className="flex items-center gap-2 w-full">
@@ -733,7 +744,7 @@ export default function SessionDetailPage() {
                         {session.players
                           .filter(pid => ![manualTeam1Player1, manualTeam1Player2, manualTeam2Player2].includes(pid) || pid === manualTeam2Player1)
                           .map((playerId) => {
-                            const count = getGamesPlayedCount(playerId, nextRotation)
+                            const count = getGamesPlayedCount(playerId)
                             return (
                               <SelectItem key={playerId} value={playerId}>
                                 <div className="flex items-center gap-2 w-full">
@@ -753,8 +764,8 @@ export default function SessionDetailPage() {
                         {session.players
                           .filter(pid => ![manualTeam1Player1, manualTeam1Player2, manualTeam2Player1].includes(pid) || pid === manualTeam2Player2)
                           .map((playerId) => {
-                            const count = getGamesPlayedCount(playerId, nextRotation);
-                            const pairCount = manualTeam2Player1 && playerId ? getPairGamesPlayedCount(manualTeam2Player1, playerId, nextRotation) : 0;
+                            const count = getGamesPlayedCount(playerId);
+                            const pairCount = manualTeam2Player1 && playerId ? getPairGamesPlayedCount(manualTeam2Player1, playerId) : 0;
                             return (
                               <SelectItem key={playerId} value={playerId}>
                                 <div className="flex items-center gap-2 w-full">
@@ -920,7 +931,7 @@ export default function SessionDetailPage() {
 <div className="relative">
   {/* Delete (X) button in top-right */}
   <button
-    onClick={() => deleteGame(game.id)}
+    onClick={() => requestDeleteGame(game.id)}
     className="absolute top-2 right-2 text-muted-foreground hover:text-destructive transition"
     aria-label="Delete Game"
   >
@@ -996,6 +1007,33 @@ export default function SessionDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!gameToDelete} onOpenChange={(open) => !open && setGameToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete game?</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this game? There's no going back (Just make it again).
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGameToDelete(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={deleteGame}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <div className="mt-10 flex justify-center">
+        <Link href={`/stats?sessionId=${sessionId}`}>
+          <Button className="px-6 py-6 text-base font-semibold bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all">
+            View Stats for this Session
+          </Button>
+        </Link>
+      </div>
     </div>
   )
 }

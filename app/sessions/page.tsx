@@ -485,17 +485,29 @@ export default function SessionsPage() {
                                   </CardDescription>
                                 </div>
                               </div>
-                              <Link href={`/sessions/${session.id}`}>
-                                <motion.div
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.95 }}
-                                >
-                                  <Button variant="outline" className="w-full sm:w-auto bg-white/50 hover:bg-white/80 border-slate-300/50 hover:border-blue-300 text-slate-700 hover:text-blue-600 shadow-sm hover:shadow-md transition-all duration-300 dark:bg-slate-100/80 dark:hover:bg-slate-100 dark:text-slate-800 dark:border-slate-400/50">
-                                    <Target className="mr-2 h-4 w-4" />
-                                    Manage Session
-                                  </Button>
-                                </motion.div>
-                              </Link>
+                              <div className="flex flex-col sm:flex-row gap-2">
+                                <Link href={`/sessions/${session.id}`}>
+                                  <motion.div
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                  >
+                                    <Button variant="outline" className="w-full sm:w-auto bg-white/50 hover:bg-white/80 border-slate-300/50 hover:border-blue-300 text-slate-700 hover:text-blue-600 shadow-sm hover:shadow-md transition-all duration-300 dark:bg-slate-100/80 dark:hover:bg-slate-100 dark:text-slate-800 dark:border-slate-400/50">
+                                      <Target className="mr-2 h-4 w-4" />
+                                      Manage Session
+                                    </Button>
+                                  </motion.div>
+                                </Link>
+                                <Link href={`/stats?sessionId=${session.id}`}>
+                                  <motion.div
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                  >
+                                    <Button variant="ghost" className="w-full sm:w-auto text-blue-600 hover:text-blue-700 dark:text-blue-500 dark:hover:text-blue-400">
+                                      View Stats
+                                    </Button>
+                                  </motion.div>
+                                </Link>
+                              </div>
                             </div>
                           </CardHeader>
                           <CardContent>
