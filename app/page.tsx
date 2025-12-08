@@ -89,9 +89,7 @@ export default function HomePage() {
               
               <FadeIn delay={0.5}>
                 <p className="text-xl sm:text-2xl text-slate-600 dark:text-slate-300 mb-8 leading-relaxed">
-                  Manage players, track sessions, and elevate your badminton game with
-                  <br className="hidden sm:block" />
-                  powerful analytics and seamless organisation.
+                  Manage players, track sessions, and elevate your badminton game with powerful analytics and seamless organisation.
                 </p>
               </FadeIn>
 
