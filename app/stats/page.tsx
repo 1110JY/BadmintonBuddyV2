@@ -17,8 +17,9 @@ import {
 } from "lucide-react"
 import { FadeIn } from "@/components/animated/fade-in"
 import { AnimatedCard } from "@/components/animated/animated-card"
-import { playerService, sessionService } from "@/lib/supabase"
+import { playerService, sessionService, supabase } from "@/lib/supabase"
 import { migrationService } from "@/lib/migration"
+import { getDeviceId } from "@/lib/device"
 
 interface Player { id: string; name: string; created_at: string }
 interface Game {
@@ -51,12 +52,14 @@ function StatsPageContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [copyingTarget, setCopyingTarget] = useState<string | null>(null)
+  const [isImporting, setIsImporting] = useState(false)
   const statsCardRef = useRef<HTMLDivElement | null>(null)
   const statsCopyButtonRef = useRef<HTMLButtonElement | null>(null)
   const playerRankingsCardRef = useRef<HTMLDivElement | null>(null)
   const playerRankingsCopyButtonRef = useRef<HTMLButtonElement | null>(null)
   const pairRankingsCardRef = useRef<HTMLDivElement | null>(null)
   const pairRankingsCopyButtonRef = useRef<HTMLButtonElement | null>(null)
+  const importInputRef = useRef<HTMLInputElement | null>(null)
 
   const loadData = async () => {
     try {
@@ -101,6 +104,154 @@ function StatsPageContent() {
   useEffect(() => {
     if (players.length && sessions.length) calculateStats()
   }, [players, sessions, timeFilter, selectedSessionId])
+
+  const triggerImport = () => {
+    importInputRef.current?.click()
+  }
+
+  const parseCsv = (text: string) => {
+    const lines = text.trim().split(/\r?\n/)
+    if (!lines.length) return { headers: [], rows: [] }
+    const headers = lines[0].split(",").map(h => h.trim())
+    const rows = lines.slice(1).map(line => {
+      const cols = line.split(",")
+      const obj: any = {}
+      headers.forEach((h, idx) => {
+        obj[h] = cols[idx]?.trim() ?? ""
+      })
+      return obj
+    })
+    return { headers, rows }
+  }
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setIsImporting(true)
+    try {
+      const text = await file.text()
+      let playersData: any[] = []
+      let sessionsData: any[] = []
+
+      const isJson = file.name.toLowerCase().endsWith(".json")
+      if (isJson) {
+        const data = JSON.parse(text)
+        playersData = Array.isArray(data.players) ? data.players : []
+        sessionsData = Array.isArray(data.sessions) ? data.sessions : []
+      } else {
+        const { headers, rows } = parseCsv(text)
+        const hasSessionFields = headers.includes("players") && headers.includes("games") && headers.includes("date")
+        const hasPlayerFields = headers.includes("name")
+
+        if (hasPlayerFields) {
+          playersData = rows
+            .filter(r => r.name)
+            .map(r => ({
+              id: r.id || Date.now().toString() + Math.random().toString(16).slice(2),
+              name: r.name,
+              created_at: r.created_at || new Date().toISOString(),
+            }))
+        }
+        if (hasSessionFields) {
+          sessionsData = rows
+            .filter(r => r.date)
+            .map(r => ({
+              id: r.id || Date.now().toString() + Math.random().toString(16).slice(2),
+              date: r.date,
+              players: (() => { try { return JSON.parse(r.players) } catch { return [] } })(),
+              games: (() => { try { return JSON.parse(r.games) } catch { return [] } })(),
+              created_at: r.created_at || new Date().toISOString(),
+              updated_at: r.updated_at || new Date().toISOString(),
+            }))
+        }
+      }
+
+      const deviceId = getDeviceId()
+
+      // Upsert players
+      if (playersData.length) {
+        try {
+          await supabase
+            .from("players")
+            .upsert(
+              playersData.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                created_at: p.created_at || new Date().toISOString(),
+                device_id: deviceId,
+              })),
+              { onConflict: "id" }
+            )
+        } catch (err: any) {
+          const message = err?.message || ""
+          if (message.includes('column "device_id" does not exist')) {
+            await supabase
+              .from("players")
+              .upsert(
+                playersData.map((p: any) => ({
+                  id: p.id,
+                  name: p.name,
+                  created_at: p.created_at || new Date().toISOString(),
+                })),
+                { onConflict: "id" }
+              )
+          } else {
+            throw err
+          }
+        }
+      }
+
+      // Upsert sessions
+      if (sessionsData.length) {
+        try {
+          await supabase
+            .from("sessions")
+            .upsert(
+              sessionsData.map((s: any) => ({
+                id: s.id,
+                date: s.date,
+                players: s.players,
+                games: s.games,
+                created_at: s.created_at || new Date().toISOString(),
+                updated_at: s.updated_at || new Date().toISOString(),
+                device_id: deviceId,
+              })),
+              { onConflict: "id" }
+            )
+        } catch (err: any) {
+          const message = err?.message || ""
+          if (message.includes('column "device_id" does not exist')) {
+            await supabase
+              .from("sessions")
+              .upsert(
+                sessionsData.map((s: any) => ({
+                  id: s.id,
+                  date: s.date,
+                  players: s.players,
+                  games: s.games,
+                  created_at: s.created_at || new Date().toISOString(),
+                  updated_at: s.updated_at || new Date().toISOString(),
+                })),
+                { onConflict: "id" }
+              )
+          } else {
+            throw err
+          }
+        }
+      }
+
+      await loadData()
+      alert("Import complete. Data has been merged into your account.")
+    } catch (err) {
+      console.error("Failed to import data:", err)
+      alert("Import failed. Please ensure you're using a valid backup JSON.")
+    } finally {
+      setIsImporting(false)
+      if (importInputRef.current) {
+        importInputRef.current.value = ""
+      }
+    }
+  }
 
   const getFilteredSessions = () => {
     if (selectedSessionId) {
@@ -277,6 +428,19 @@ function StatsPageContent() {
 
   const totalGames = sessions.reduce((sum, s) => sum + s.games.filter(g => g.completed).length, 0)
   const totalSessions = sessions.length
+  const exportBackup = async () => {
+    const data = {
+      players: await playerService.getAll(),
+      sessions: await sessionService.getAll(),
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = "badminton-backup.json"
+    link.click()
+    URL.revokeObjectURL(url)
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-black dark:via-gray-900 dark:to-slate-900">
@@ -341,6 +505,34 @@ function StatsPageContent() {
                       Export CSV
                     </Button>
                   </motion.div>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      onClick={exportBackup}
+                      variant="outline"
+                      className="bg-white/80 hover:bg-white/90 border-slate-300/50 hover:border-emerald-300 text-slate-700 hover:text-emerald-600 shadow-lg hover:shadow-xl transition-all duration-300 dark:bg-slate-100/80 dark:hover:bg-slate-100 dark:text-slate-800 dark:border-slate-400/50"
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Export Backup
+                    </Button>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      onClick={triggerImport}
+                      variant="outline"
+                      disabled={isImporting}
+                      className="bg-white/80 hover:bg-white/90 border-slate-300/50 hover:border-green-300 text-slate-700 hover:text-green-600 shadow-lg hover:shadow-xl transition-all duration-300 dark:bg-slate-100/80 dark:hover:bg-slate-100 dark:text-slate-800 dark:border-slate-400/50"
+                    >
+                      <Download className="mr-2 h-4 w-4 rotate-180" />
+                      {isImporting ? "Importing..." : "Import Backup"}
+                    </Button>
+                  </motion.div>
+                  <input
+                    ref={importInputRef}
+                    type="file"
+                    accept=".json,.csv,text/csv"
+                    className="hidden"
+                    onChange={handleImport}
+                  />
                 </div>
               </FadeIn>
             </div>
