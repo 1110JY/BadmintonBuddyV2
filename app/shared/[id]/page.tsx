@@ -129,12 +129,23 @@ export default function SharedSessionPage() {
       })
     })
 
-    return Object.entries(stats).map(([playerId, stat]) => ({
-      playerId,
-      name: getPlayerName(playerId),
-      ...stat,
-      winRate: stat.gamesPlayed > 0 ? (stat.wins / stat.gamesPlayed * 100).toFixed(1) : '0.0'
-    })).sort((a, b) => parseFloat(b.winRate) - parseFloat(a.winRate))
+    return Object.entries(stats)
+      .map(([playerId, stat]) => {
+        const winRate = stat.gamesPlayed > 0 ? (stat.wins / stat.gamesPlayed) * 100 : 0
+        return {
+          playerId,
+          name: getPlayerName(playerId),
+          ...stat,
+          winRate,
+        }
+      })
+      .sort((a, b) => {
+        if (b.winRate !== a.winRate) return b.winRate - a.winRate
+        if (b.pointsDifference !== a.pointsDifference) return b.pointsDifference - a.pointsDifference
+        if (b.gamesPlayed !== a.gamesPlayed) return b.gamesPlayed - a.gamesPlayed
+        if (b.wins !== a.wins) return b.wins - a.wins
+        return a.name.localeCompare(b.name)
+      })
   }
 
   const calculatePairStats = () => {
@@ -274,7 +285,7 @@ export default function SharedSessionPage() {
                       <td className="py-3 font-medium">{stat.name}</td>
                       <td className="text-center py-3">{stat.gamesPlayed}</td>
                       <td className="text-center py-3 font-medium">{stat.wins}/{stat.losses}</td>
-                      <td className="text-center py-3 font-semibold">{stat.winRate}%</td>
+                      <td className="text-center py-3 font-semibold">{stat.winRate.toFixed(1)}%</td>
                       <td className={`text-center py-3 font-semibold ${stat.pointsDifference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {stat.pointsDifference > 0 ? '+' : ''}{stat.pointsDifference}
                       </td>

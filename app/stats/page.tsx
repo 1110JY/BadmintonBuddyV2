@@ -326,7 +326,13 @@ function StatsPageContent() {
 
     const sortedPlayers = Object.values(stats)
       .filter(s => s.gamesPlayed > 0)
-      .sort((a, b) => b.winRate - a.winRate || b.gamesPlayed - a.gamesPlayed)
+      .sort((a, b) =>
+        b.winRate - a.winRate ||
+        b.pointsDifference - a.pointsDifference ||
+        b.gamesPlayed - a.gamesPlayed ||
+        b.gamesWon - a.gamesWon ||
+        a.name.localeCompare(b.name)
+      )
 
     setPlayerStats(sortedPlayers)
 
