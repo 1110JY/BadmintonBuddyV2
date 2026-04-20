@@ -1,55 +1,26 @@
-# 🏸 Badminton Buddy
+# Badminton Buddy
 
-A modern, full-stack web application for managing badminton sessions, tracking players, and organizing games with beautiful UI and device-based privacy.
+A real-time session tracker for competitive recreational badminton.
 
-<<<<<<< HEAD
-![Badminton Buddy](./public/Favicon.png)
+Built because I wanted structured data from my weekly sessions — win rates, fair rotations, and pair performance — rather than relying on notes that got lost mid-game.
 
-=======
->>>>>>> 2fad8360a4cc0d1f0e213279ddb27dee13b42c69
-## ✨ Features
+**Live demo:** https://badminton-buddyxyz.vercel.app
 
-### 🎯 **Session Management**
-- Create and manage badminton sessions with specific dates
-- Add multiple players to each session
-- Generate random or manual team pairings
-- Track game scores and completion status
-- Export session data to CSV format
-- Share sessions with others via shareable links
+## Features
 
-### 👥 **Player Management**
-- Add and manage player profiles
-- Device-based privacy (your players are private to your device)
-- Legacy data migration support
-- Clean, intuitive player selection interface
+- Live game scoring with persistent session data
+- Dynamic player pairing with fairness constraints to reduce repeated matchups
+- Win rate and performance stats per player and pair
+- Session history stored across devices
+- Mobile-first UI designed for courtside use
 
-### 🎮 **Game Tracking**
-- Automatic random team pairing generation
-- Manual team pairing for custom matchups
-- Real-time score tracking and editing
-- Game completion status monitoring
-- Delete/modify games as needed
+## Tech Stack
 
-### 📊 **Statistics & Analytics**
-- Session completion tracking
-- Player participation statistics
-- Game outcome analysis
-- Beautiful data visualization
-
-### 🔒 **Privacy & Security**
-- **Device-based data isolation** - Your data stays on your device
-- No user accounts required
-- Automatic device ID generation and management
-- Legacy data preservation during migrations
-- Optional session sharing when desired
-
-### 🎨 **Modern UI/UX**
-- Beautiful gradient-based design system
-- Responsive design for all devices
-- Dark/Light theme support
-- Smooth animations and transitions
-- Elevated card layouts with shadows and blur effects
-- Professional typography with custom fonts
+- React + TypeScript
+- Next.js
+- Supabase (PostgreSQL)
+- Tailwind CSS
+- Vercel
 
 ## 🚀 Technology Stack
 
