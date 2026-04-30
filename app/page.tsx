@@ -6,7 +6,7 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Users, Calendar, Trophy, BarChart3, Zap, Target, Award } from "lucide-react"
+import { Users, Calendar, Trophy, BarChart3, Zap, Target, Award, CheckCircle2, Circle, Sparkles } from "lucide-react"
 import { FadeIn } from "@/components/animated/fade-in"
 import { AnimatedCard } from "@/components/animated/animated-card"
 import { CountUp, StaggerContainer, StaggerItem } from "@/components/animated/animations"
@@ -137,10 +137,21 @@ export default function HomePage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-slate-800 dark:text-slate-900">
-                    <CountUp value={players.length} delay={1} />
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-600 mt-1">Active members</p>
+                  {players.length > 0 ? (
+                    <>
+                      <div className="text-3xl font-bold text-slate-800 dark:text-slate-900">
+                        <CountUp value={players.length} delay={1} />
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-600 mt-1">Active members</p>
+                    </>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-sm text-slate-700 dark:text-slate-800 font-medium">No players yet</p>
+                      <Link href="/players">
+                        <p className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-500 dark:hover:text-blue-400 font-medium cursor-pointer">Add your first player →</p>
+                      </Link>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </AnimatedCard>
@@ -154,10 +165,21 @@ export default function HomePage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-slate-800 dark:text-slate-900">
-                    <CountUp value={sessions.length} delay={1.2} />
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-600 mt-1">Sessions organized</p>
+                  {sessions.length > 0 ? (
+                    <>
+                      <div className="text-3xl font-bold text-slate-800 dark:text-slate-900">
+                        <CountUp value={sessions.length} delay={1.2} />
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-600 mt-1">Sessions organized</p>
+                    </>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-sm text-slate-700 dark:text-slate-800 font-medium">No sessions yet</p>
+                      <Link href="/sessions">
+                        <p className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-500 dark:hover:text-blue-400 font-medium cursor-pointer">Create a session →</p>
+                      </Link>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </AnimatedCard>
@@ -171,12 +193,18 @@ export default function HomePage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-slate-800 dark:text-slate-900">
-                    <CountUp value={completedGames} delay={1.4} />
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-600 mt-1">
-                    {totalGames - completedGames} pending
-                  </p>
+                  {completedGames > 0 ? (
+                    <>
+                      <div className="text-3xl font-bold text-slate-800 dark:text-slate-900">
+                        <CountUp value={completedGames} delay={1.4} />
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-600 mt-1">
+                        {totalGames - completedGames} pending
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-slate-700 dark:text-slate-800 font-medium">No games played</p>
+                  )}
                 </CardContent>
               </Card>
             </AnimatedCard>
@@ -190,15 +218,153 @@ export default function HomePage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-slate-800 dark:text-slate-900">
-                    <CountUp value={thisWeekSessions} delay={1.6} />
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-600 mt-1">Recent sessions</p>
+                  {thisWeekSessions > 0 ? (
+                    <>
+                      <div className="text-3xl font-bold text-slate-800 dark:text-slate-900">
+                        <CountUp value={thisWeekSessions} delay={1.6} />
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-600 mt-1">Recent sessions</p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-slate-700 dark:text-slate-800 font-medium">Nothing this week</p>
+                  )}
                 </CardContent>
               </Card>
             </AnimatedCard>
           </div>
         </FadeIn>
+
+        {/* Getting Started Section - Only show when no data */}
+        {players.length === 0 && sessions.length === 0 && (
+          <FadeIn delay={1.0}>
+            <Card className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-lg dark:from-blue-900/20 dark:to-indigo-900/20 dark:border-blue-800">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-2xl text-slate-800 dark:text-slate-100">Getting Started</CardTitle>
+                <CardDescription className="text-slate-600 dark:text-slate-400">Follow these 3 simple steps to get your badminton group up and running</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-3">
+                  {/* Step 1: Add Players */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.2, duration: 0.5 }}
+                  >
+                    <Link href="/players">
+                      <div className="p-6 rounded-lg border-2 border-blue-300 bg-white hover:bg-blue-50 transition-all duration-300 cursor-pointer group dark:bg-slate-800 dark:border-blue-700 dark:hover:bg-slate-700">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold shadow-md">
+                            1
+                          </div>
+                          {players.length > 0 ? (
+                            <CheckCircle2 className="h-6 w-6 text-teal-500 flex-shrink-0" />
+                          ) : (
+                            <Circle className="h-6 w-6 text-slate-400 flex-shrink-0" />
+                          )}
+                        </div>
+                        <h3 className="font-semibold text-slate-800 mb-2 text-lg group-hover:text-blue-600 transition-colors dark:text-slate-100 dark:group-hover:text-blue-400">
+                          Add Players
+                        </h3>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">Create your player roster and get everyone registered</p>
+                      </div>
+                    </Link>
+                  </motion.div>
+
+                  {/* Step 2: Create a Session */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.4, duration: 0.5 }}
+                  >
+                    <Link href={players.length > 0 ? "/sessions" : "#"}>
+                      <div
+                        className={`p-6 rounded-lg border-2 transition-all duration-300 ${
+                          players.length > 0
+                            ? "border-purple-300 bg-white hover:bg-purple-50 cursor-pointer group dark:bg-slate-800 dark:border-purple-700 dark:hover:bg-slate-700"
+                            : "border-slate-300 bg-slate-50 cursor-not-allowed group dark:bg-slate-800/50 dark:border-slate-700"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div
+                            className={`h-10 w-10 rounded-full flex items-center justify-center text-white font-bold shadow-md ${
+                              players.length > 0 ? "bg-purple-500" : "bg-slate-400"
+                            }`}
+                          >
+                            2
+                          </div>
+                          {sessions.length > 0 ? (
+                            <CheckCircle2 className="h-6 w-6 text-teal-500 flex-shrink-0" />
+                          ) : (
+                            <Circle className={`h-6 w-6 flex-shrink-0 ${players.length > 0 ? "text-slate-400" : "text-slate-300"}`} />
+                          )}
+                        </div>
+                        <h3
+                          className={`font-semibold mb-2 text-lg transition-colors ${
+                            players.length > 0
+                              ? "text-slate-800 group-hover:text-purple-600 dark:text-slate-100 dark:group-hover:text-purple-400"
+                              : "text-slate-500 dark:text-slate-500"
+                          }`}
+                        >
+                          Create a Session
+                        </h3>
+                        <p className={`text-sm ${players.length > 0 ? "text-slate-600 dark:text-slate-400" : "text-slate-500 dark:text-slate-500"}`}>
+                          {players.length > 0 ? "Organize a game and start playing" : "Add players first to create a session"}
+                        </p>
+                      </div>
+                    </Link>
+                  </motion.div>
+
+                  {/* Step 3: Play! */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.6, duration: 0.5 }}
+                  >
+                    <div
+                      className={`p-6 rounded-lg border-2 transition-all duration-300 ${
+                        sessions.length > 0
+                          ? "border-emerald-300 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 dark:border-emerald-700"
+                          : "border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-700"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div
+                          className={`h-10 w-10 rounded-full flex items-center justify-center text-white font-bold shadow-md ${
+                            sessions.length > 0 ? "bg-emerald-500" : "bg-slate-400"
+                          }`}
+                        >
+                          3
+                        </div>
+                        {sessions.length > 0 ? (
+                          <CheckCircle2 className="h-6 w-6 text-teal-500 flex-shrink-0" />
+                        ) : (
+                          <Circle className="h-6 w-6 text-slate-400 flex-shrink-0" />
+                        )}
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="flex-1">
+                          <h3
+                            className={`font-semibold mb-2 text-lg transition-colors ${
+                              sessions.length > 0 ? "text-slate-800 dark:text-slate-100" : "text-slate-800 dark:text-slate-100"
+                            }`}
+                          >
+                            Play!
+                          </h3>
+                          <p className={`text-sm ${sessions.length > 0 ? "text-slate-600 dark:text-slate-400" : "text-slate-600 dark:text-slate-400"}`}>
+                            {sessions.length > 0 ? "You're all set to start tracking games" : "Create a session to begin"}
+                          </p>
+                        </div>
+                        {sessions.length > 0 && (
+                          <Sparkles className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-1 animate-pulse" />
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              </CardContent>
+            </Card>
+          </FadeIn>
+        )}
 
         {/* Main Content Grid */}
         <StaggerContainer delay={1.8} className="grid gap-8 lg:grid-cols-3">

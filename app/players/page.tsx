@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label"
 import { Trash2, UserPlus, Edit, Users, Calendar, Trophy, Zap } from "lucide-react"
 import { FadeIn } from "@/components/animated/fade-in"
 import { AnimatedCard } from "@/components/animated/animated-card"
+import { PlayerAvatar } from "@/components/player-avatar"
 import { playerService } from "@/lib/supabase"
 import { migrationService } from "@/lib/migration"
 
@@ -349,9 +350,7 @@ export default function PlayersPage() {
                         <CardHeader className="pb-4">
                           <div className="flex items-start justify-between">
                             <div className="flex items-center space-x-3">
-                              <div className="h-12 w-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg dark:shadow-emerald-500/20">
-                                {player.name.charAt(0).toUpperCase()}
-                              </div>
+                              <PlayerAvatar name={player.name} size="lg" />
                               <div>
                                 <CardTitle className="text-xl text-slate-800 dark:text-slate-900 group-hover:text-emerald-600 transition-colors">
                                   {player.name}

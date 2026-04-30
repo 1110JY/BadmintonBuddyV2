@@ -21,6 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Calendar, Plus, Users, Trophy, CalendarPlus, Clock, Target } from "lucide-react"
 import { FadeIn } from "@/components/animated/fade-in"
 import { AnimatedCard } from "@/components/animated/animated-card"
+import { PlayerAvatar } from "@/components/player-avatar"
 import { playerService, sessionService } from "@/lib/supabase"
 import { migrationService } from "@/lib/migration"
 
@@ -232,6 +233,7 @@ export default function SessionsPage() {
                                   checked={selectedPlayers.includes(player.id)}
                                   onCheckedChange={() => togglePlayerSelection(player.id)}
                                 />
+                                <PlayerAvatar name={player.name} size="sm" />
                                 <Label htmlFor={player.id} className="dark:text-slate-800">{player.name}</Label>
                               </div>
                             ))}
@@ -515,15 +517,16 @@ export default function SessionsPage() {
                               <p className="text-sm font-medium text-slate-700 dark:text-slate-800">Players:</p>
                               <div className="flex flex-wrap gap-2">
                                 {session.players.map((playerId) => (
-                                  <motion.span
+                                  <motion.div
                                     key={playerId}
                                     initial={{ scale: 0.9, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
                                     transition={{ duration: 0.3 }}
-                                    className="px-3 py-1 bg-gradient-to-r from-slate-100 to-slate-200 hover:from-blue-100 hover:to-blue-200 text-slate-700 hover:text-blue-700 rounded-full text-sm font-medium transition-all duration-300 shadow-sm hover:shadow-md dark:from-slate-200 dark:to-slate-300 dark:text-slate-800 dark:hover:from-blue-200 dark:hover:to-blue-300"
+                                    className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-slate-100 to-slate-200 hover:from-blue-100 hover:to-blue-200 text-slate-700 hover:text-blue-700 rounded-full text-sm font-medium transition-all duration-300 shadow-sm hover:shadow-md dark:from-slate-200 dark:to-slate-300 dark:text-slate-800 dark:hover:from-blue-200 dark:hover:to-blue-300"
                                   >
-                                    {getPlayerName(playerId)}
-                                  </motion.span>
+                                    <PlayerAvatar name={getPlayerName(playerId)} size="sm" />
+                                    <span>{getPlayerName(playerId)}</span>
+                                  </motion.div>
                                 ))}
                               </div>
                             </div>

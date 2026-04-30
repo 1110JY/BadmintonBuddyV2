@@ -18,6 +18,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Shuffle, Edit, Save, Download, Trash2, X, Share2, Copy, Check, CheckCircle2 } from "lucide-react"
 import { supabase, playerService, sessionService } from "@/lib/supabase"
+import { PlayerAvatar } from "@/components/player-avatar"
 
 interface Player {
   id: string
@@ -963,6 +964,7 @@ const [manualTeam2Player1, setManualTeam2Player1] = useState("")
 
                      return (
                   <span key={playerId} className="px-3 py-1 bg-secondary text-secondary-foreground rounded-md text-sm flex items-center gap-2">
+                    <PlayerAvatar name={getPlayerName(playerId)} size="sm" />
                     <span>{getPlayerName(playerId)}</span>
                     <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium border ${getBadgeClasses(gamesPlayedCount)}`}>
                       {gamesPlayedCount}

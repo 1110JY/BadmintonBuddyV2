@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
@@ -17,6 +18,7 @@ import {
 } from "lucide-react"
 import { FadeIn } from "@/components/animated/fade-in"
 import { AnimatedCard } from "@/components/animated/animated-card"
+import { PlayerAvatar } from "@/components/player-avatar"
 import { playerService, sessionService, supabase } from "@/lib/supabase"
 import { migrationService } from "@/lib/migration"
 import { getDeviceId } from "@/lib/device"
@@ -326,13 +328,13 @@ function StatsPageContent() {
 
     const sortedPlayers = Object.values(stats)
       .filter(s => s.gamesPlayed > 0)
-      .sort((a, b) =>
-        b.winRate - a.winRate ||
-        b.pointsDifference - a.pointsDifference ||
-        b.gamesPlayed - a.gamesPlayed ||
-        b.gamesWon - a.gamesWon ||
-        a.name.localeCompare(b.name)
-      )
+      .sort((a, b) => {
+        if (a.winRate !== b.winRate) return b.winRate - a.winRate
+        if (a.pointsDifference !== b.pointsDifference) return b.pointsDifference - a.pointsDifference
+        if (a.gamesPlayed !== b.gamesPlayed) return b.gamesPlayed - a.gamesPlayed
+        if (a.gamesWon !== b.gamesWon) return b.gamesWon - a.gamesWon
+        return a.name.localeCompare(b.name)
+      })
 
     setPlayerStats(sortedPlayers)
 
@@ -576,6 +578,26 @@ function StatsPageContent() {
               </Card>
             </div>
           </FadeIn>
+        ) : players.length === 0 && sessions.length === 0 ? (
+          <FadeIn delay={0.6}>
+            <div className="max-w-2xl mx-auto">
+              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl dark:bg-white/95">
+                <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="h-16 w-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mb-6 shadow-lg dark:from-blue-900/30 dark:to-purple-900/30">
+                    <BarChart3 className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">No stats yet</h2>
+                  <p className="text-slate-600 dark:text-slate-400 mb-6">Play some games to start seeing your statistics here.</p>
+                  <Link href="/sessions">
+                    <Button className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 border-t border-purple-400/50 dark:shadow-purple-500/30 dark:hover:shadow-purple-500/40">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      Create a Session →
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </div>
+          </FadeIn>
         ) : (
         <>
         {/* Quick Stats Overview */}
@@ -714,7 +736,12 @@ function StatsPageContent() {
                           transition={{ delay: index * 0.1, duration: 0.4 }}
                           className="border-b border-slate-100 dark:border-slate-200 hover:bg-slate-50/50 dark:hover:bg-slate-100/30 transition-colors"
                         >
-                          <td className="py-4 font-medium text-slate-800 dark:text-slate-900">{stat.name}</td>
+                          <td className="py-4 font-medium text-slate-800 dark:text-slate-900">
+                            <div className="flex items-center gap-3">
+                              <PlayerAvatar name={stat.name} size="md" />
+                              <span>{stat.name}</span>
+                            </div>
+                          </td>
                           <td className="text-center py-4 text-slate-700 dark:text-slate-800">{stat.gamesPlayed}</td>
                           <td className="text-center py-4 font-medium text-slate-800 dark:text-slate-900">{stat.gamesWon}/{stat.gamesLost}</td>
                           <td className="text-center py-4 font-semibold text-purple-600 dark:text-purple-700">{stat.winRate.toFixed(1)}%</td>
@@ -787,10 +814,11 @@ function StatsPageContent() {
                             index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
                             index === 1 ? 'bg-gradient-to-br from-gray-400 to-gray-600' :
                             index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600' :
-                            'bg-gradient-to-br from-slate-400 to-slate-600'
+                            'bg-slate-400'
                           }`}>
                             {index < 3 ? <Medal className="h-5 w-5" /> : index + 1}
                           </div>
+                          <PlayerAvatar name={stat.name} size="md" />
                           <div>
                             <p className="font-semibold text-slate-800 dark:text-slate-900">{stat.name}</p>
                             <p className="text-sm text-slate-600 dark:text-slate-700">
