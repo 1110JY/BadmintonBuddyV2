@@ -80,7 +80,7 @@ export default function HomePage() {
                 transition={{ duration: 0.8, delay: 0.3 }}
                 className="mb-6"
               >
-                <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6">
+                <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-6">
                   <span className="text-blue-600 dark:text-blue-400">Badminton</span>
                   <br />
                   <span className="text-slate-800 dark:text-slate-100">Made Simple</span>
@@ -88,7 +88,7 @@ export default function HomePage() {
               </motion.div>
               
               <FadeIn delay={0.5}>
-                <p className="text-xl sm:text-2xl text-slate-600 dark:text-slate-300 mb-8 leading-relaxed">
+                <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-slate-600 dark:text-slate-300 mb-8 leading-relaxed">
                   Manage players, track sessions, and elevate your badminton game with powerful analytics and seamless organisation.
                 </p>
               </FadeIn>
@@ -100,7 +100,7 @@ export default function HomePage() {
                     whileTap={{ scale: 0.95 }}
                   >
                     <Link href="/sessions">
-                      <Button size="lg" className="w-full sm:w-auto text-lg px-8 py-6 bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 border-t border-blue-300/50 dark:shadow-white/20 dark:hover:shadow-white/30">
+                      <Button size="lg" className="w-full sm:w-auto text-sm sm:text-base md:text-lg px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 border-t border-blue-300/50 dark:shadow-white/20 dark:hover:shadow-white/30">
                         <Zap className="mr-2 h-5 w-5" />
                         Start New Session
                       </Button>
@@ -111,7 +111,7 @@ export default function HomePage() {
                     whileTap={{ scale: 0.95 }}
                   >
                     <Link href="/stats">
-                      <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg px-8 py-6 border-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-lg hover:shadow-xl transition-all duration-300 border-t-white dark:border-gray-600 dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 dark:shadow-white/30 dark:hover:shadow-white/40">
+                      <Button size="lg" variant="outline" className="w-full sm:w-auto text-sm sm:text-base md:text-lg px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 border-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-lg hover:shadow-xl transition-all duration-300 border-t-white dark:border-gray-600 dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 dark:shadow-white/30 dark:hover:shadow-white/40">
                         <BarChart3 className="mr-2 h-5 w-5" />
                         View Analytics
                       </Button>
@@ -127,7 +127,7 @@ export default function HomePage() {
       <div className="container mx-auto px-4 pb-16">
         {/* Stats Cards */}
         <FadeIn delay={0.8}>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-16 -mt-8 relative z-10">
+          <div className="grid gap-3 sm:gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-4 mb-16 -mt-8 relative z-10">
             <AnimatedCard delay={0.1} className="group">
               <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:bg-white/90 dark:bg-white/95 dark:group-hover:bg-white dark:shadow-white/30 dark:hover:shadow-white/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -243,7 +243,7 @@ export default function HomePage() {
                 <CardDescription className="text-slate-600 dark:text-slate-400">Follow these 3 simple steps to get your badminton group up and running</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-3 sm:gap-4 md:grid-cols-3">
                   {/* Step 1: Add Players */}
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -251,7 +251,7 @@ export default function HomePage() {
                     transition={{ delay: 1.2, duration: 0.5 }}
                   >
                     <Link href="/players">
-                      <div className="p-6 rounded-lg border-2 border-blue-300 bg-white hover:bg-blue-50 transition-all duration-300 cursor-pointer group dark:bg-slate-800 dark:border-blue-700 dark:hover:bg-slate-700">
+                      <div className="p-4 sm:p-6 rounded-lg border-2 border-blue-300 bg-white hover:bg-blue-50 transition-all duration-300 cursor-pointer group dark:bg-slate-800 dark:border-blue-700 dark:hover:bg-slate-700">
                         <div className="flex items-start justify-between mb-4">
                           <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold shadow-md">
                             1

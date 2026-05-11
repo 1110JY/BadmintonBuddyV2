@@ -783,7 +783,7 @@ const [manualTeam2Player1, setManualTeam2Player1] = useState("")
                             return (
                               <SelectItem key={playerId} value={playerId}>
                                 <div className="flex items-center gap-2 w-full">
-                                  <span className="truncate max-w-[12rem]">{getPlayerName(playerId)}</span>
+                                  <span className="truncate max-w-xs sm:max-w-sm">{getPlayerName(playerId)}</span>
                                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getBadgeClasses(count)}`}>
                                     {count}
                                   </span>
@@ -834,7 +834,7 @@ const [manualTeam2Player1, setManualTeam2Player1] = useState("")
                             return (
                               <SelectItem key={playerId} value={playerId}>
                                 <div className="flex items-center gap-2 w-full">
-                                  <span className="truncate max-w-[12rem]">{getPlayerName(playerId)}</span>
+                                  <span className="truncate max-w-xs sm:max-w-sm">{getPlayerName(playerId)}</span>
                                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getBadgeClasses(count)}`}>
                                     {count}
                                   </span>
@@ -855,7 +855,7 @@ const [manualTeam2Player1, setManualTeam2Player1] = useState("")
                             return (
                               <SelectItem key={playerId} value={playerId}>
                                 <div className="flex items-center gap-2 w-full">
-                                  <span className="truncate max-w-[12rem]">{getPlayerName(playerId)}</span>
+                                  <span className="truncate max-w-xs sm:max-w-sm">{getPlayerName(playerId)}</span>
                                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getBadgeClasses(count)}`}>
                                     {count}
                                   </span>
@@ -1208,9 +1208,9 @@ const [manualTeam2Player1, setManualTeam2Player1] = useState("")
             </DialogHeader>
             <CardContent className="p-0">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-                <div className="flex flex-col items-center gap-3 p-4 rounded-lg bg-purple-50">
-                  <p className="text-sm font-medium text-purple-700">Team 1</p>
-                  <p className="text-4xl font-bold text-purple-900">{liveScore1}</p>
+                <div className="flex flex-col items-center gap-3 p-3 sm:p-4 rounded-lg bg-purple-50">
+                  <p className="text-xs sm:text-sm font-medium text-purple-700">Team 1</p>
+                  <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-900">{liveScore1}</p>
                   <div className="flex gap-2">
                     <Button variant="outline" onClick={() => adjustScore("team1", -1)} disabled={liveScore1 === 0}>
                       -1
@@ -1220,9 +1220,9 @@ const [manualTeam2Player1, setManualTeam2Player1] = useState("")
                     </Button>
                   </div>
                 </div>
-                <div className="flex flex-col items-center gap-3 p-4 rounded-lg bg-purple-50">
-                  <p className="text-sm font-medium text-purple-700">Team 2</p>
-                  <p className="text-4xl font-bold text-purple-900">{liveScore2}</p>
+                <div className="flex flex-col items-center gap-3 p-3 sm:p-4 rounded-lg bg-purple-50">
+                  <p className="text-xs sm:text-sm font-medium text-purple-700">Team 2</p>
+                  <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-900">{liveScore2}</p>
                   <div className="flex gap-2">
                     <Button variant="outline" onClick={() => adjustScore("team2", -1)} disabled={liveScore2 === 0}>
                       -1

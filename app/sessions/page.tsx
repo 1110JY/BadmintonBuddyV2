@@ -200,13 +200,13 @@ export default function SessionsPage() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        <Button size="lg" className="text-lg px-8 py-6 bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 border-t border-blue-300/50 dark:shadow-blue-500/30 dark:hover:shadow-blue-500/40" disabled={players.length < 4}>
+                        <Button size="lg" className="text-sm sm:text-base md:text-lg px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 border-t border-blue-300/50 dark:shadow-blue-500/30 dark:hover:shadow-blue-500/40" disabled={players.length < 4}>
                           <CalendarPlus className="mr-2 h-5 w-5" />
                           Create New Session
                         </Button>
                       </motion.div>
                     </DialogTrigger>
-                    <DialogContent className="w-[92vw] max-w-[560px] sm:max-w-md px-4 sm:px-6 rounded-2xl dark:bg-white/95 dark:shadow-white/30">
+                    <DialogContent className="w-[95vw] max-w-sm sm:max-w-md md:max-w-lg px-4 sm:px-6 rounded-2xl dark:bg-white/95 dark:shadow-white/30">
                       <DialogHeader>
                         <DialogTitle className="dark:text-slate-900">Create New Session</DialogTitle>
                         <DialogDescription className="dark:text-slate-700">
@@ -253,11 +253,13 @@ export default function SessionsPage() {
                                 placeholder="Group name"
                                 value={groupName}
                                 onChange={(e) => setGroupName(e.target.value)}
+                                className="text-base"
                               />
                               <Button
                                 variant="outline"
                                 onClick={saveCurrentGroup}
                                 disabled={!groupName.trim() || selectedPlayers.length === 0}
+                                className="whitespace-nowrap"
                               >
                                 Save selection
                               </Button>

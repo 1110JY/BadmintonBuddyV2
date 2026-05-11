@@ -469,23 +469,23 @@ function StatsPageContent() {
                     <BarChart3 className="h-8 w-8 text-white" />
                   </div>
                 </div>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4">
                   <span className="text-purple-600 dark:text-purple-400">Statistics</span>
                 </h1>
-                <p className="text-xl text-slate-600 dark:text-slate-300 mb-8">
+                <p className="text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-300 mb-8">
                   Comprehensive player performance and game analytics
                 </p>
               </motion.div>
               
               <FadeIn delay={0.4}>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center flex-wrap">
                   <Select
                     value={selectedSessionId ?? "all"}
                     onValueChange={(value) => {
                       setSelectedSessionId(value === "all" ? null : value)
                     }}
                   >
-                    <SelectTrigger className="w-64 bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 dark:bg-white/95 dark:shadow-white/30 dark:text-slate-900">
+                    <SelectTrigger className="w-full sm:w-64 bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 dark:bg-white/95 dark:shadow-white/30 dark:text-slate-900">
                       <SelectValue>
                         {selectedSessionId
                           ? sessions.find(s => s.id === selectedSessionId)?.date || "Select Session"
@@ -602,7 +602,7 @@ function StatsPageContent() {
         <>
         {/* Quick Stats Overview */}
         <FadeIn delay={0.6}>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-12">
+          <div className="grid gap-3 sm:gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-12">
             {[
               { 
                 title: "Total Players", 

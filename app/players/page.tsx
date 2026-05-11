@@ -136,10 +136,10 @@ export default function PlayersPage() {
                     <Users className="h-8 w-8 text-white" />
                   </div>
                 </div>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4">
                   <span className="text-emerald-600 dark:text-emerald-400">Players</span>
                 </h1>
-                <p className="text-xl text-slate-600 dark:text-slate-300 mb-8">
+                <p className="text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-300 mb-8">
                   Manage your badminton club members and build your team
                 </p>
               </motion.div>
@@ -152,7 +152,7 @@ export default function PlayersPage() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        <Button size="lg" className="text-lg px-8 py-6 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 border-t border-emerald-300/50 dark:shadow-emerald-500/30 dark:hover:shadow-emerald-500/40">
+                        <Button size="lg" className="text-sm sm:text-base md:text-lg px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 border-t border-emerald-300/50 dark:shadow-emerald-500/30 dark:hover:shadow-emerald-500/40">
                           <UserPlus className="mr-2 h-5 w-5" />
                           Add New Player
                         </Button>
